@@ -45,7 +45,7 @@ For example:
 		MacOSX/
 		Linux/
 
-In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK folder.  
+In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK folder.  After adding the environment variable you may need to reopen Visual Studio.
 
 ##Compiling for Windows
 
