@@ -52,13 +52,15 @@ In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK 
 + The project solution is created with Visual Studio 2008.
 + Make sure you have set up your Maya SDK files as specified above
 + Each version of Maya has its own solution configuration. 32-bit and 64-bit cpu targets can be selected from the solution platform list.
++ Hit 'Build' and it should build a plugin for the current configuration.
 
-+ To add a new configuration for another version of Maya:
-	+ Right-click on the solution and open Configuration Manager
-	+ In "Action solution configuration" select "New"
-	+ Select the latest release version of Maya from the list of "Copy settings from"
-	+ Make the name the same format but replace the version number
-	+ Make sure that the 32 and 64-bit settings are correct
+#### Add support for additional Maya versions
+To add a new configuration for another version of Maya:
++ Right-click on the solution and open Configuration Manager
++ In "Action solution configuration" select "New"
++ Select the latest release version of Maya from the list of "Copy settings from"
++ Make the name the same format but replace the version number
++ Make sure that the 32 and 64-bit settings are correct
 
 + Once the new configuration is created you'll need to configure the project for that configuration:
 	+ Right-click on the UVAutoRatio project and go to Properties
