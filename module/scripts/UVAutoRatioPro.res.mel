@@ -1,0 +1,130 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+// Non-UI
+UVAR_DisplayString "UVAutoRatio Pro is up to date!" m_UVAutoRatioPro.kIsUpToDate;
+
+// Main
+UVAR_DisplayString "UVAutoRatio" m_UVAutoRatioPro.kTabTitleUVAutoratio;
+UVAR_DisplayString "Settings" m_UVAutoRatioPro.kTabTitleSettings;
+UVAR_DisplayString "About" m_UVAutoRatioPro.kTabTitleAbout;
+
+// Main Tab
+UVAR_DisplayString "Ratio Tool" m_UVAutoRatioPro.kRatioFrameTitle;
+UVAR_DisplayString "Current Ratio:" m_UVAutoRatioPro.kCurrentRatio;
+UVAR_DisplayString "Set Ratio from Selection" m_UVAutoRatioPro.kSetRatioFromSelection;
+UVAR_DisplayString "Apply to Objects" m_UVAutoRatioPro.kApplyToObjects;
+UVAR_DisplayString "Apply to Shells" m_UVAutoRatioPro.kApplyToShells;
+UVAR_DisplayString "Other Tools" m_UVAutoRatioPro.kExtraFrameTitle;
+UVAR_DisplayString "Fix Shell Overlaps" m_UVAutoRatioPro.kFixShellOverlaps;
+UVAR_DisplayString "Normalise" m_UVAutoRatioPro.kNormalise;
+UVAR_DisplayString "Aspect Ratio" m_UVAutoRatioPro.kNormaliseKeepAspectRatio;
+UVAR_DisplayString "Auto-Select UV Shells" m_UVAutoRatioPro.kUVShellSelectionAutoSelect;
+
+// Main Tab - Ratio Presets
+UVAR_DisplayString "Open Presets Menu" m_UVAutoRatioPro.kPresetButton;
+UVAR_DisplayString "Use Preset" m_UVAutoRatioPro.kUsePreset;
+UVAR_DisplayString "Add Preset..." m_UVAutoRatioPro.kSavePreset;
+UVAR_DisplayString "Delete Presets..." m_UVAutoRatioPro.kEditPresets;
+UVAR_DisplayString "Save Presets..." m_UVAutoRatioPro.kSavePresetFile;
+UVAR_DisplayString "Load Presets..." m_UVAutoRatioPro.kLoadPresetsFile;
+UVAR_DisplayString "Save Ratio Preset" m_UVAutoRatioPro.kSaveRatioWindowTitle;
+UVAR_DisplayString "Descriptive Name:" m_UVAutoRatioPro.kSaveRatioWindowMessage;
+UVAR_DisplayString "Edit Ratio Presets" m_UVAutoRatioPro.kEditPresetsWindowsTitle;
+UVAR_DisplayString "Close" m_UVAutoRatioPro.kClose;
+UVAR_DisplayString "Delete" m_UVAutoRatioPro.kDelete;
+
+// Main Tab - UV Shell Finder
+UVAR_DisplayString "UV Shell Finder Tool" m_UVAutoRatioPro.kUVShellFinderFrameTitle;
+UVAR_DisplayString "Update UV Shell List from Selection" m_UVAutoRatioPro.kUVShellFinderUpdateButton;
+
+// Main Tab - UV Tools
+UVAR_DisplayString "UV Tools" m_UVAutoRatioPro.kUVToolsFrameTitle;
+UVAR_DisplayString "Ratio Inspector" m_UVAutoRatioPro.kUVToolsRatioInspector;
+UVAR_DisplayString "Texture View" m_UVAutoRatioPro.kUVToolsTextureView;
+UVAR_DisplayString "Unfold" m_UVAutoRatioPro.kUVToolsUnfold;
+UVAR_DisplayString "Layout" m_UVAutoRatioPro.kUVToolsLayout;
+UVAR_DisplayString "Merge" m_UVAutoRatioPro.kUVToolsMerge;
+UVAR_DisplayString "Cut Edges" m_UVAutoRatioPro.kUVToolsCutUVEdges;
+
+// About Tab - License
+UVAR_DisplayString "License" m_UVAutoRatioPro.kAboutTabLicenseFrameTitle;
+UVAR_DisplayString "Registered to:" m_UVAutoRatioPro.kAboutTabLicenseFrameRegisteredTo;
+UVAR_DisplayString "UNREGISTERED" m_UVAutoRatioPro.kAboutTabLicenseFrameUnregistered;
+UVAR_DisplayString "Enter New Key" m_UVAutoRatioPro.kAboutTabLicenseEnterNewKey;
+UVAR_DisplayString "Purchase Key" m_UVAutoRatioPro.kAboutTabLicensePurchaseKey;
+
+// About Tab - Plugin Info
+UVAR_DisplayString "Plugin Info" m_UVAutoRatioPro.kAboutTabPluginInfoFrameTitle;
+UVAR_DisplayString "Name: " m_UVAutoRatioPro.kAboutTabPluginInfoName;
+UVAR_DisplayString "Version: " m_UVAutoRatioPro.kAboutTabPluginInfoVersion;
+UVAR_DisplayString "Built: " m_UVAutoRatioPro.kAboutTabPluginInfoBuilt;
+UVAR_DisplayString "Vendor: " m_UVAutoRatioPro.kAboutTabPluginInfoVendor;
+UVAR_DisplayString "Path: " m_UVAutoRatioPro.kAboutTabPluginInfoPath;
+
+
+// About Tab - Links
+UVAR_DisplayString "Links" m_UVAutoRatioPro.kAboutTabLinksFrameTitle;
+UVAR_DisplayString "Documentation" m_UVAutoRatioPro.kAboutTabLinksDocumentation;
+UVAR_DisplayString "External Websites:" m_UVAutoRatioPro.kAboutLinksExternalWebsites;
+UVAR_DisplayString "UVAutoRatio Home" m_UVAutoRatioPro.kAboutLinksUVAutoRatioHome;
+UVAR_DisplayString "UVAutoRatio Forum" m_UVAutoRatioPro.kAboutLinksUVAutoRatioForum;
+
+// About Tab - Credits
+UVAR_DisplayString "Credits" m_UVAutoRatioPro.kAboutTabCreditsFrameTitle;
+UVAR_DisplayString "Real-time graphics software and tools" m_UVAutoRatioPro.kAboutTabCreditsRenderHeadsServices;
+UVAR_DisplayString "Special thanks: Saehoon Lee" m_UVAutoRatioPro.kAboutTabCreditsThanksSaehoonLee;
+UVAR_DisplayString "Email: plugin@renderheads.com" m_UVAutoRatioPro.kAboutTabCreditsRenderHeadsEmail;
+
+// Settings Tab - UV Set
+UVAR_DisplayString "UV Set" m_UVAutoRatioPro.kSettingsTabUVSetFrameTitle;
+UVAR_DisplayString "Use current UV Set" m_UVAutoRatioPro.kSettingsTabUseCurrentUVSet;
+UVAR_DisplayString "Manually select UV Set" m_UVAutoRatioPro.kSettingsTabManualUVSet;
+UVAR_DisplayString "Select UV Set:" m_UVAutoRatioPro.kSettingsTabSelectUVSet;
+UVAR_DisplayString "Update UV Set List from Selection" m_UVAutoRatioPro.kSettingsTabUpdateUVSetFromSelection;
+UVAR_DisplayString "If the UV Set doesn't exist:" m_UVAutoRatioPro.kSettingsTabIFUVSetNotExist;
+UVAR_DisplayString "Skip mesh" m_UVAutoRatioPro.kSettingsTabSkipMesh;
+UVAR_DisplayString "Process using it's current UV Set" m_UVAutoRatioPro.kSettingsTabProcessCurrentUVSet;
+
+// Settings Tab - Display Options
+UVAR_DisplayString "Display Options" m_UVAutoRatioPro.kSettingsTabDisplayOptionsFrameTitle;
+UVAR_DisplayString "Force UV Shell Selection Display To:" m_UVAutoRatioPro.kSettingsTabDisplayForceSelectionDisplay;
+UVAR_DisplayString "UVs" m_UVAutoRatioPro.kSettingsTabDisplayUVs;
+UVAR_DisplayString "Faces" m_UVAutoRatioPro.kSettingsTabDisplayFaces;
+
+// Settings Tab - Layout Options
+UVAR_DisplayString "Layout Options" m_UVAutoRatioPro.kSettingsTabLayoutFrameTitle;
+UVAR_DisplayString "After scaling UV shells:" m_UVAutoRatioPro.kSettingsTabAfterScalingShells;
+UVAR_DisplayString "Do nothing" m_UVAutoRatioPro.kSettingsTabDoNothing;
+UVAR_DisplayString "Move shells to fix overlaps" m_UVAutoRatioPro.kSettingsTabMoveShells;
+UVAR_DisplayString "Iterations:" m_UVAutoRatioPro.kSettingsTabIterations;
+UVAR_DisplayString "Step Size:" m_UVAutoRatioPro.kSettingsTabStepSize;
+UVAR_DisplayString "Padding:" m_UVAutoRatioPro.kSettingsTabPadding;
+UVAR_DisplayString "Apply to Shells in Selection Now" m_UVAutoRatioPro.kSettingsTabApplyOverlapFixNow;
+
+// Settings Tab - Misc Options
+UVAR_DisplayString "Misc Options" m_UVAutoRatioPro.kSettingsTabMiscOptionsFrameTitle;
+UVAR_DisplayString "Limit Scaling to:" m_UVAutoRatioPro.kSettingsTabLimitScalingTo;
+UVAR_DisplayString "None" m_UVAutoRatioPro.kSettingsTabLimitScalingNone;
+UVAR_DisplayString "Horizontal" m_UVAutoRatioPro.kSettingsTabLimitScalingHorizontal;
+UVAR_DisplayString "Vertical" m_UVAutoRatioPro.kSettingsTabLimitScalingVertical;
+UVAR_DisplayString "Hide UV Editor during operations" m_UVAutoRatioPro.kSettingsTabAutoHideUVEditor;
+UVAR_DisplayString "Verbose Output" m_UVAutoRatioPro.kSettingsTabVerboseOutput;
+UVAR_DisplayString "Show Timings" m_UVAutoRatioPro.kSettingsTabShowTimings;
+UVAR_DisplayString "Reset Settings on Startup" m_UVAutoRatioPro.kSettingsTabResetSettingsStartup;
+UVAR_DisplayString "Add To Shelf" m_UVAutoRatioPro.kSettingsTabAddToShelf;
+UVAR_DisplayString "Reset Settings to Defaults" m_UVAutoRatioPro.kSettingsTabResetToDefaults;
+
+// Settings Tab - Auto-Update Options
+UVAR_DisplayString "Auto-Update Options" m_UVAutoRatioPro.kSettingsTabAutoUpdateFrameTitle;
+UVAR_DisplayString "Check for New Version on Startup" m_UVAutoRatioPro.kSettingsTabCheckVersionOnStartup;
+UVAR_DisplayString "Check for New Version Now" m_UVAutoRatioPro.kSettingsTabCheckNewVersionNow;

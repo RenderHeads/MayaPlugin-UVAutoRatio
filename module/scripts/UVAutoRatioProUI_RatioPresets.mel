@@ -1,0 +1,296 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+global proc
+BuildRatioPresetsMenu(string $parent, string $TextRatio)
+{
+	setParent -menu $parent;
+
+	$command = "UVAutoRatioProUI_SaveRatioPresetWindow;";
+	$command += "menu -e -deleteAllItems \"" + $parent + "\";";
+	$command += "BuildRatioPresetsMenu(\"" + $parent + "\", \"" + $TextRatio + "\");";
+	$PresetSave = `menuItem -ecr false -label (UVAR_uiRes("m_UVAutoRatioPro.kSavePreset")) -c $command`;
+
+	$command = "UVAutoRatioProUI_EditRatioPresetsWindow(\"" + $parent + "\", \"" + $TextRatio + "\");";
+	$command += "menu -e -deleteAllItems \"" + $parent + "\";";
+	$command += "BuildRatioPresetsMenu(\"" + $parent + "\", \"" + $TextRatio + "\");";
+	menuItem -ecr false -label (UVAR_uiRes("m_UVAutoRatioPro.kEditPresets")) -c $command;
+
+	menuItem -d true;
+
+	if (`optionVar -exists "UVAutoRatioProUI_RatioPresets"`)
+	{
+		string $presets[] = `optionVar -query "UVAutoRatioProUI_RatioPresets"`;
+		for ($preset in $presets)
+		{
+			if (size($preset) > 0)
+			{
+				string $buffer[];
+				$numTokens = `tokenize $preset "===" $buffer`;
+				if (size($buffer) == 2)
+				{
+					string $name = $buffer[0];
+					string $ratio = $buffer[1];
+					string $display = ($name + ": " + $ratio);
+					//string $display = $ratio + " (" + $name + ")";
+
+					string $command = "optionVar -floatValue UVAutoRatioProUI_Ratio " + $ratio + ";";
+					$command += "floatField -e -value " + $ratio + " " + $TextRatio + ";";
+					menuItem -ecr false -label $display -c $command;
+				}
+			}
+		}
+	}
+
+	menuItem -d true;
+
+	$command = "UVAutoRatioProUI_SavePresetToFile();";
+	menuItem -ecr false -label (UVAR_uiRes("m_UVAutoRatioPro.kSavePresetFile")) -c $command;
+
+	$command = "UVAutoRatioProUI_LoadPresetFile();";
+	$command += "menu -e -deleteAllItems \"" + $parent + "\";";
+	$command += "BuildRatioPresetsMenu(\"" + $parent + "\", \"" + $TextRatio + "\");";
+	menuItem -ecr false -label (UVAR_uiRes("m_UVAutoRatioPro.kLoadPresetsFile")) -c $command;
+
+	setParent -menu ..;
+}
+
+global proc
+UVAutoRatioProUI_SavePresetFile(string $filename)
+{
+	if (`optionVar -exists "UVAutoRatioProUI_RatioPresets"`)
+	{
+		string $presets[] = `optionVar -query "UVAutoRatioProUI_RatioPresets"`;
+
+		int $fileId=`fopen $filename "w"`;
+		fprint $fileId "UVAR-Presets\n";
+
+		fprint $fileId `size($presets)`;
+		fprint $fileId "\n";
+
+		for ($preset in $presets)
+		{
+			if (size($preset) > 0)
+			{
+				string $buffer[];
+				$numTokens = `tokenize $preset "===" $buffer`;
+				if (size($buffer) == 2)
+				{
+					string $name = $buffer[0];
+					string $ratio = $buffer[1];
+					fprint $fileId $name;
+					fprint $fileId " ";
+					fprint $fileId $ratio;
+					fprint $fileId "\n";
+				}
+			}
+		}
+
+		fclose $fileId;
+	}
+}
+
+global string $RH_UVARPRO_Preset_OldSaveFilename;
+
+// NOTE: Older versions of Maya don't support the -mode switch on fileDialog, so we must use this older way of saving
+global proc int 
+UVAutoRatioProUI_SavePresetToFile_OldSave( string $filename, string $fileType )
+{
+	global string $RH_UVARPRO_Preset_OldSaveFilename;
+
+	$RH_UVARPRO_Preset_OldSaveFilename = $filename;
+	return 1;
+}
+
+global proc
+UVAutoRatioProUI_SavePresetToFile()
+{
+	global string $RH_UVARPRO_Preset_OldSaveFilename;
+
+	if (`optionVar -exists "UVAutoRatioProUI_RatioPresets"`)
+	{
+		string $filename;
+		// NOTE: Older versions of Maya don't support the -mode switch
+		int $version = UVAR_GetMayaVersionNumber();
+		if ($version <= 70)
+		{
+			fileBrowserDialog -m 1 -dialogStyle 1 -fc "UVAutoRatioProUI_SavePresetToFile_OldSave" -an "Save";
+			$filename = $RH_UVARPRO_Preset_OldSaveFilename;
+		}
+		else
+			$filename = `fileDialog -dm "*.*" -mode 1`;
+
+		if (size($filename) > 0)
+		{
+			UVAutoRatioProUI_SavePresetFile($filename);
+		}
+	}
+}
+
+global proc
+UVAutoRatioProUI_LoadPresetFile()
+{
+	// NOTE: Older versions of Maya don't support the -mode switch
+	int $version = UVAR_GetMayaVersionNumber();
+	if ($version <= 70)
+		$filename = toNativePath(`fileDialog -dm "*.*"`);
+	else
+		$filename = toNativePath(`fileDialog -dm "*.*" -mode 0`);
+
+	if (size($filename) > 0)
+	{
+		if (`filetest -r $filename`)
+		{
+ 			$fileId=`fopen $filename "r"`;
+
+			if ("UVAR-Presets" == `fgetword $fileId`)
+			{
+				int $numPresets = `fgetword $fileId`;
+
+				if ($numPresets > 0)
+				{
+					optionVar -clearArray "UVAutoRatioProUI_RatioPresets";
+					for ($i=0; $i<$numPresets; $i++)
+					{
+						string $presetName = `fgetword $fileId`;
+						float $presetValue = `fgetword $fileId`;
+						string $text = $presetName + "===" + $presetValue;
+						optionVar -stringValueAppend "UVAutoRatioProUI_RatioPresets" $text;				
+					}
+				}
+			}
+
+			fclose $fileId;
+		}
+	}
+}
+
+global proc
+UVAutoRatioProUI_EditRatioPresetsWindow(string $presetMenuParent, string $TextRatio)
+{
+	if (!`window -exists UVAR_EditRatioPresetsWindow` ) 
+	{
+		window -t (UVAR_uiRes("m_UVAutoRatioPro.kEditPresetsWindowsTitle")) -w 150 -h 250 UVAR_EditRatioPresetsWindow;
+		formLayout fl;
+
+		setParent -m ..;
+
+		$PresetList = `textScrollList -allowMultiSelection true psetList`;
+		separator -horizontal true shelfSeparator;
+		$command = "UVAutoRatioProUI_EditRatioPresetsDeleteSelected " + $PresetList + ";";
+		$command += "menu -e -deleteAllItems \"" + $presetMenuParent + "\";";
+		$command += "BuildRatioPresetsMenu(\"" + $presetMenuParent + "\", \"" + $TextRatio + "\");";
+		button
+			-label (UVAR_uiRes("m_UVAutoRatioPro.kDelete"))
+			-c $command
+			deleteButton;
+		button
+			-label (UVAR_uiRes("m_UVAutoRatioPro.kClose"))
+			-c ("window -e -visible false UVAR_EditRatioPresetsWindow")
+			closeButton;
+
+
+		formLayout -e
+			-af shelfSeparator "left" 0
+			-af shelfSeparator "right" 0
+			-ac shelfSeparator "bottom" 5 closeButton
+
+			-af psetList	"top" 5
+			-af psetList	"left" 5
+			-af psetList	"right" 5
+			-ac psetList	"bottom" 5 shelfSeparator
+
+			-af deleteButton "left" 5
+			-af deleteButton "bottom" 5
+			-ap deleteButton "right" 3 50
+			-an deleteButton "top"
+
+			-ap closeButton "left" 2 50
+			-af closeButton "bottom" 5
+			-af closeButton "right" 5
+			-an closeButton "top"
+			fl;
+
+		UVAutoRatioProUI_EditRatioPresetsPopulate($PresetList);
+	}
+
+	showWindow UVAR_EditRatioPresetsWindow;
+}
+
+global proc
+UVAutoRatioProUI_SaveRatioPresetWindow()
+{
+	float $targetRatio = `optionVar -query "UVAutoRatioProUI_Ratio"`;
+
+	string $text;
+	string $result = `promptDialog
+		-title (UVAR_uiRes("m_UVAutoRatioPro.kSaveRatioWindowTitle"))
+		-message (UVAR_uiRes("m_UVAutoRatioPro.kSaveRatioWindowMessage"))
+		-button "OK" -button "Cancel"
+		-defaultButton "OK" -cancelButton "Cancel"
+		-dismissString "Cancel"`;
+
+	if ($result == "OK") 
+	{
+		$text = `promptDialog -query -text` + "===" + $targetRatio;
+
+		optionVar -stringValueAppend "UVAutoRatioProUI_RatioPresets" $text;
+	}
+}
+
+global proc
+UVAutoRatioProUI_EditRatioPresetsPopulate(string $PresetList)
+{
+	textScrollList -e -removeAll $PresetList;
+	if (`optionVar -exists "UVAutoRatioProUI_RatioPresets"`)
+	{
+		string $presets[] = `optionVar -query "UVAutoRatioProUI_RatioPresets"`;
+		for ($preset in $presets)
+		{
+			if (size($preset) > 0)
+			{
+				string $buffer[];
+				$numTokens = `tokenize $preset "===" $buffer`;
+				if (size($buffer) == 2)
+				{
+					string $name = $buffer[0];
+					string $ratio = $buffer[1];
+					string $display = ($name + ": " + $ratio);
+
+					textScrollList -e -append $display $PresetList; 
+				}
+			}
+		}
+	}
+}
+
+global proc
+UVAutoRatioProUI_EditRatioPresetsDeleteSelected(string $PresetList)
+{
+	if (`optionVar -exists "UVAutoRatioProUI_RatioPresets"`)
+	{
+		string $presets[] = `optionVar -query "UVAutoRatioProUI_RatioPresets"`;
+		int $indices[] = `textScrollList -q -sii $PresetList`;
+		for ($index in $indices)
+		{
+			$presets[$index-1] = "";
+		}
+		optionVar -clearArray "UVAutoRatioProUI_RatioPresets";
+		for ($preset in $presets)
+		{
+			if (size($preset) > 0)
+				optionVar -stringValueAppend "UVAutoRatioProUI_RatioPresets" $preset;
+		}
+		UVAutoRatioProUI_EditRatioPresetsPopulate($PresetList);
+	}
+}

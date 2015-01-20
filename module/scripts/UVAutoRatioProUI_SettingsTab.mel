@@ -1,0 +1,447 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+proc string[]
+UVAutoRatioProUI_GetUniqueUVSetNamesInSelection()
+{
+	string $UVSetNames[];
+
+	// Get selected DAG nodes
+	string $dagnodes[] = UVAutoRatioProUI_GetDAGNodeNamesFromSelection();
+
+	// Go through each DAG node
+	for($nodeName in $dagnodes)
+	{
+		// Get names of UV Sets for this node
+		string $uvSets[];
+		$uvSets = `polyUVSet -q -allUVSets $nodeName`;
+
+		// Collect UV set names
+		appendStringArray($UVSetNames, $uvSets, size($uvSets));
+	}
+
+	// Return list of unique UVset names
+	return stringArrayRemoveDuplicates($UVSetNames);
+}
+
+global proc
+UVAutoRatioProUI_UpdateUVSetListFromSelection(string $listControl)
+{
+    string $UVSetList[] = `UVAutoRatioProUI_GetUniqueUVSetNamesInSelection`;
+    
+    textScrollList -e -removeAll $listControl;
+
+    for ($UVSet in $UVSetList)
+    {
+	    textScrollList -e -append $UVSet $listControl;
+    }
+}
+
+global proc
+UVAutoRatioProUI_SetUVSet(string $listControl)
+{
+	string $names[] = `textScrollList -q -selectItem $listControl`;
+	if (size($names)>0)
+	{
+		optionVar -stringValue "UVAutoRatioProUI_UVSetName" $names[0];	
+	}
+	else
+	{
+		optionVar -stringValue "UVAutoRatioProUI_UVSetName" "";	
+	}
+}
+
+proc
+UVAutoRatioProUI_CreateUVSetFrame()
+{
+	//
+	// Frame: UV Set
+	//	
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_UVSet"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabUVSetFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+		columnLayout
+					-columnAlign "center"
+					-rowSpacing 4 -adjustableColumn true;
+	
+			radioCollection;
+				radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabUseCurrentUVSet")) -align "left" -select RadioCurrentUVSet;
+				radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabManualUVSet")) -align "left" RadioManualUVSet ;
+		
+			$ManualUVControls = `columnLayout
+					-columnAlign "center"
+					-rowSpacing 4 -adjustableColumn true`;
+		
+				text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabSelectUVSet"));
+				$UVSetList = `textScrollList -numberOfRows 4 -allowMultiSelection false -width 200 -height 80`;
+
+				$ButtonUpdateUVList = `button -width 200 -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabUpdateUVSetFromSelection"))`;
+				
+				text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabIFUVSetNotExist"));
+				
+				radioCollection;
+					$RadioSkip = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabSkipMesh")) -align "left" -select`;
+					$RadioNoSkip = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabProcessCurrentUVSet")) -align "left"`;
+			setParent ..;
+		setParent ..;
+	setParent ..;
+
+	//	
+	// COMMANDS
+	//
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVSet 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVSet 0" $frame;	
+
+	textScrollList -edit -selectCommand ("UVAutoRatioProUI_SetUVSet " + $UVSetList) $UVSetList;
+	
+	columnLayout -e -enable false $ManualUVControls;
+	
+	$doCommand=("UVAutoRatioProUI_UpdateUVSetListFromSelection " + $UVSetList);
+	button -edit -command $doCommand $ButtonUpdateUVList;
+
+	// hide uvset options
+	$command = "columnLayout -e -enable false " + $ManualUVControls + ";";
+	$command += "optionVar -intValue \"UVAutoRatioProUI_UseUVSet\" 0";
+	radioButton -e -onCommand $command RadioCurrentUVSet;
+
+	// show uvset options
+	$command = "columnLayout -e -enable true " + $ManualUVControls + ";";
+	$command += "optionVar -intValue \"UVAutoRatioProUI_UseUVSet\" 1";
+	radioButton -e -onCommand $command RadioManualUVSet;
+
+	if (`optionVar -q "UVAutoRatioProUI_UseUVSet"` == 0)
+	{
+		radioButton -e -select RadioCurrentUVSet;
+	}
+	else
+	{
+		radioButton -e -select RadioManualUVSet;
+		columnLayout -e -enable true $ManualUVControls;
+
+		if (size(`optionVar -q "UVAutoRatioProUI_UVSetName"`) > 0)
+		{
+			textScrollList -e -append (`optionVar -q "UVAutoRatioProUI_UVSetName"`) $UVSetList;
+			textScrollList -e -selectIndexedItem 1 $UVSetList;
+		}
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Skip"` == 0)
+	{
+		radioButton -e -select $RadioNoSkip;
+	}
+	else
+	{
+		radioButton -e -select $RadioSkip;
+	}
+
+	// skipping of meshes
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_Skip\" 1") $RadioSkip;
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_Skip\" 0") $RadioNoSkip;
+}
+
+proc
+UVAutoRatioProUI_CreateOptionsFrame()
+{
+	//
+	// Frame: Display Options
+	//
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_DisplayOptions"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabDisplayOptionsFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+		//rowLayout -adjustableColumn 1 -numberOfColumns 1 -columnOffset1 2 -columnAlign1 "center" -columnAttach1 "both";
+        columnLayout -adjustableColumn true -columnAlign "center"
+					-columnAttach "both" 2
+					-columnOffset "both" 2
+					-rowSpacing 4;
+                        
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabDisplayForceSelectionDisplay"));
+
+			radioCollection;
+				$RadioSelectModeUV = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabDisplayUVs")) -align "left"`;
+				$RadioSelectModeFaces = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabDisplayFaces")) -align "left"`;
+				//$RadioSelectModeOriginal = `radioButton -label "Original" -align "left"`;
+
+/*		columnLayout
+			-columnAlign "center"
+			-rowSpacing 4
+            //-columnWidth 240
+            -adjustableColumn true;
+
+			text -align "left" -label "Force UV Shell Selection Display To:";
+
+			radioCollection;
+				$RadioSelectModeUV = `radioButton -label "UVs" -align "left"`;
+				$RadioSelectModeFaces = `radioButton -label "Faces" -align "left" -select`;
+				//$RadioSelectModeOriginal = `radioButton -label "Original" -align "left"`;*/
+		setParent ..;		
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_DisplayOptions 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_DisplayOptions 0" $frame;	
+
+	if (`optionVar -query "UVAutoRatioProUI_SelectMode"` > 0)
+	{
+		radioButton -e -select $RadioSelectModeFaces;
+	}
+	else
+	{
+		radioButton -e -select $RadioSelectModeUV;
+	}
+
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_SelectMode\" 0") $RadioSelectModeUV;
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_SelectMode\" 1") $RadioSelectModeFaces;
+	//radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_SelectMode\" 2") $RadioSelectModeOriginal;
+}
+
+proc
+UVAutoRatioProUI_CreateMiscOptionsFrame()
+{
+	//
+	// Frame: Layout Options
+	//
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_LayoutOptions"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabLayoutFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+        columnLayout -adjustableColumn true -columnAlign "center"
+					-columnAttach "both" 2
+					-columnOffset "both" 2
+					-rowSpacing 4;
+
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabAfterScalingShells"));
+
+			radioCollection;
+				$RadioDoNothing = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabDoNothing")) -align "left"`;
+				$RadioOverlayFix = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabMoveShells")) -align "left"`;
+
+			rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2;
+				text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabIterations")) -width 90;
+				$IF_iterations = `intField -minValue 1 -maxValue 100000 -value 10000 -step 1000 -width 90 -editable true`;
+			setParent..;
+			rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2;
+				text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabStepSize")) -width 90;
+				$FF_layoutStep = `floatField -minValue 0.0001 -maxValue 0.1 -value 0.001 -precision 5 -step 0.01 -width 90 -editable true`;
+			setParent..;
+			rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2;
+				text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabPadding")) -width 90;
+				$FF_layoutMinDistance = `floatField -minValue 0.0 -maxValue 1000.0 -value 0.0 -precision 5 -step 0.1 -width 90 -editable true`;
+			setParent..;
+
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabApplyOverlapFixNow")) -command "UVAutoRatioProUI_ApplyOverlapFix";
+
+			//setParent ..;
+
+		setParent ..;		
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_LayoutOptions 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_LayoutOptions 0" $frame;
+
+	if (`optionVar -q "UVAutoRatioProUI_LayoutMode"` == 0)
+	{
+		radioButton -e -select $RadioDoNothing;
+	}
+	else
+	{
+		radioButton -e -select $RadioOverlayFix;
+	}
+
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_LayoutMode\" 0") $RadioDoNothing;
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_LayoutMode\" 1") $RadioOverlayFix;
+
+	//
+	// Frame: Misc Options
+	//
+	$frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_MiscOptions"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabMiscOptionsFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+        columnLayout -adjustableColumn true -columnAlign "center"
+					-columnAttach "both" 2
+					-columnOffset "both" 2
+					-rowSpacing 4;
+
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabLimitScalingTo"));
+			radioCollection;
+				$RadioScaleNone = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabLimitScalingNone")) -align "left"`;
+				$RadioScaleHoriz = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabLimitScalingHorizontal")) -align "left"`;
+				$RadioScaleVert = `radioButton -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabLimitScalingVertical")) -align "left"`;
+
+			separator -style "single";
+
+			$AutoCloseUVEditorCheckbox = `checkBox -align left -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabAutoHideUVEditor"))  -value false -onCommand ("optionVar -intValue \"UVAutoRatioProUI_AutoCloseUVEditor\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_AutoCloseUVEditor\" 0")`;
+
+			$VerboseCheckbox = `checkBox -align left -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabVerboseOutput")) -value false -onCommand ("optionVar -intValue \"UVAutoRatioProUI_Verbose\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_Verbose\" 0")`;
+
+			$ShowTimingsCheckbox = `checkBox -align left -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabShowTimings")) -value false -onCommand ("optionVar -intValue \"UVAutoRatioProUI_ShowTimings\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_ShowTimings\" 0")`;
+
+			$ResetSettingsCheckbox = `checkBox -align left -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabResetSettingsStartup")) -value false -onCommand ("optionVar -intValue \"UVAutoRatioProUI_ResetOnStart\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_ResetOnStart\" 0")`;
+
+			separator -style "single";
+
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabAddToShelf")) -command ("UVAutoRatioProUI_AddToShelf");
+
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabResetToDefaults")) -command ("UVAutoRatioProUI_ResetSettings");
+		setParent ..;
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_MiscOptions 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_MiscOptions 0" $frame;
+
+	if (`optionVar -query "UVAutoRatioProUI_AutoCloseUVEditor"` == 1)
+	{
+		checkBox -e -value true $AutoCloseUVEditorCheckbox;
+	}
+	else
+	{
+		checkBox -e -value false $AutoCloseUVEditorCheckbox;
+	}
+
+
+	if (`optionVar -query "UVAutoRatioProUI_ResetOnStart"` == 1)
+	{
+		checkBox -e -value true $ResetSettingsCheckbox;
+	}
+	else
+	{
+		checkBox -e -value false $ResetSettingsCheckbox;
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Verbose"` == 1)
+	{
+		checkBox -e -value true $VerboseCheckbox;
+	}
+	else
+	{
+		checkBox -e -value false $VerboseCheckbox;
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ShowTimings"` == 1)
+	{
+		checkBox -e -value true $ShowTimingsCheckbox;
+	}
+	else
+	{
+		checkBox -e -value false $ShowTimingsCheckbox;
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ScaleAxis"` == 0)
+	{
+		radioButton -e -select $RadioScaleNone;
+	}
+	if (`optionVar -query "UVAutoRatioProUI_ScaleAxis"` == 1)
+	{
+		radioButton -e -select $RadioScaleHoriz;
+	}
+	if (`optionVar -query "UVAutoRatioProUI_ScaleAxis"` == 2)
+	{
+		radioButton -e -select $RadioScaleVert;
+	}
+
+	$command = "UVAR_SetVarFromIntField " + $IF_iterations + " UVAutoRatioProUI_LayoutIterations";
+	intField -edit -changeCommand $command $IF_iterations;
+	intField -edit -value (`optionVar -query "UVAutoRatioProUI_LayoutIterations"`) $IF_iterations;
+
+	$command = "UVAR_SetVarFromFloatField " + $FF_layoutStep + " UVAutoRatioProUI_LayoutStep";
+	floatField -edit -changeCommand $command $FF_layoutStep;
+	floatField -edit -value (`optionVar -query "UVAutoRatioProUI_LayoutStep"`) $FF_layoutStep;
+
+	$command = "UVAR_SetVarFromFloatField " + $FF_layoutMinDistance + " UVAutoRatioProUI_LayoutMinDistance";
+	floatField -edit -changeCommand $command $FF_layoutMinDistance;
+	floatField -edit -value (`optionVar -query "UVAutoRatioProUI_LayoutMinDistance"`) $FF_layoutMinDistance;
+
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_ScaleAxis\" 0") $RadioScaleNone;
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_ScaleAxis\" 1") $RadioScaleHoriz;
+	radioButton -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_ScaleAxis\" 2") $RadioScaleVert;
+}
+
+proc
+UVAutoRatioProUI_CreateUpdateOptionsFrame()
+{
+	//
+	// Frame: Update Options
+	//
+	$frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_UpdateOptions"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabAutoUpdateFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+        columnLayout -adjustableColumn true -columnAlign "center"
+					-columnAttach "both" 2
+					-columnOffset "both" 2
+					-rowSpacing 4;
+
+			//text -align "left" -label "Check for New Version:";
+
+			$UpdateOnStartupCheckbox = `checkBox -align left -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabCheckVersionOnStartup")) -value false -onCommand ("optionVar -intValue \"UVAutoRatioProUI_UpdateOnStartup\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_UpdateOnStartup\" 0")`;
+
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kSettingsTabCheckNewVersionNow")) -command ("UVAutoRatioProUI_CheckForNewVersion(1);");
+		setParent ..;
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_UpdateOptions 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_UpdateOptions 0" $frame;
+
+	if (`optionVar -query "UVAutoRatioProUI_UpdateOnStartup"` == 1)
+	{
+		checkBox -e -value true $UpdateOnStartupCheckbox;
+	}
+	else
+	{
+		checkBox -e -value false $UpdateOnStartupCheckbox;
+	}
+}
+
+global proc string
+UVAutoRatioProUI_CreateOptionsTab()
+{
+	string $layout = `scrollLayout -horizontalScrollBarThickness 0 -childResizable true`;
+        columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 0 -columnAttach "both" 0;
+
+			UVAutoRatioProUI_CreateUVSetFrame;
+			UVAutoRatioProUI_CreateOptionsFrame;
+			UVAutoRatioProUI_CreateMiscOptionsFrame;
+            UVAutoRatioProUI_CreateUpdateOptionsFrame;
+
+		// End of columnLayout layout
+		setParent ..;
+
+	setParent ..;
+
+	return $layout;
+}

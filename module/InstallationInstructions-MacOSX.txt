@@ -1,0 +1,16 @@
+UVAutoRatioPro - Maya Command Plugin
+--------------------------------
+Mac Installation Instructions
+
+1) Open UVAutoRatio2ProModule.txt, and edit it's path to be the folder where you've installed UVAutoRatioPro.
+   Perhaps something like /Applications/UVAutoRatioPro/
+
+2) Copy UVAutoRatio2ProModule.txt into the "modules" folder of Maya, which is usually found in:
+   /Applications/Autodesk/maya2008/maya.app/Contents/modules/
+
+   To open maya.app click on the gears icon in Finder and choose "Show Package Contents".
+   It may need to be created if it doesn't already exist
+
+3) Run Maya
+
+4) Type "UVAutoRatioProUI;" to launch the UI

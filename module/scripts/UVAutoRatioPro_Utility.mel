@@ -1,0 +1,59 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+global proc string[]
+UVAutoRatioProUI_GetDAGNodeNamesFromSelection()
+{
+	string $nodes[];
+	$nodes = `selectedNodes`;
+
+	// Return dag objects only
+	string $dagnodes[];
+	$dagnodes = `selectedNodes -dagObjects`;
+
+	return $dagnodes;
+}
+
+global proc string
+UVAutoRatioProUI_GetSelectionAsString()
+{
+	string $selectionList[] = `ls -selection`;
+	if (size($selectionList)>0)
+	{
+		return stringArrayToString($selectionList, " ");
+	}
+
+	return "";
+}
+
+global proc
+UVAutoRatioProUI_AddToShelf()
+{
+    global string $gShelfTopLevel;
+    if (`tabLayout -exists $gShelfTopLevel`) 
+    {
+		string $currentShelf = `tabLayout -query -selectTab $gShelfTopLevel`;
+		setParent $currentShelf;
+
+		//  Create the shelf button on the current shelf.
+		shelfButton 
+			-label "Launch UVAutoRatioPro UI"
+			-command "UVAutoRatioProUI"
+			-annotation "Launch UVAutoRatioPro UI"
+			-image1 "UVAutoRatioIcon.xpm"
+			-highlightImage "UVAutoRatioIconOver.xpm"
+			-style `shelfLayout -query -style $currentShelf`
+			-width `shelfLayout -query -cellWidth $currentShelf`
+			-height `shelfLayout -query -cellHeight $currentShelf`;
+    }
+}

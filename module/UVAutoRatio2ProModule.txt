@@ -1,0 +1,14 @@
+//
+// UVAutoRatio Pro Module Definition
+//
+// 1) Edit the path at the bottom of this file to point to the folder/directory where UVAutoRatio is installed
+//
+// 2) This text file must be copied into the "modules" folder of Maya, which is usually found in:
+//
+//    /usr/autodesk/maya2008/modules
+//
+//    It may need to be created if it doesn't already exist
+//
+// ------------------------------------------------------------------------------------------
+
++ UVAutoRatioPro 2.6.0 ~/UVAutoRatioPro/

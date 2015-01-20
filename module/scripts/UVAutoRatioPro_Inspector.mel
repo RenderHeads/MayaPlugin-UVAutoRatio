@@ -1,0 +1,143 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+global proc
+UVAutoRatioPro_GetSelectionStats(string $surfaceAreaText, string $uvAreaText, string $ratioText)
+{
+	// Convert selection to a single string
+//	string $selectionString = `UVAutoRatioProUI_GetSelectionAsString`;
+//	float $areas[] = `GetSurfaceUVArea $selectionString`;
+
+    string $command = "GetSurfaceUVArea ";
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	float $areas[] = eval($command);
+	float $totalSurfaceArea = $areas[0];
+	float $totalUVArea = $areas[1];
+	float $ratio = $areas[2];
+	
+	/*// Prevent divide-by-zero
+	if ($totalUVArea != 0.0 && $totalSurfaceArea != 0.0)
+	{
+		$ratio = ($totalSurfaceArea / $totalUVArea);
+	}*/
+
+	textField -e -text $totalSurfaceArea $surfaceAreaText;
+	textField -e -text $totalUVArea $uvAreaText;
+	textField -e -text $ratio $ratioText;
+}
+
+global proc
+UVAutoRatioProUI_CreateInspector(string $parentName, string $surfaceAreaText, string $uvAreaText, string $ratioText)
+{
+	// Create the scriptjob
+	string $command = "UVAutoRatioPro_GetSelectionStats " + $surfaceAreaText + " " + $uvAreaText + " " + $ratioText;
+	int $jobNum = `scriptJob -parent $parentName -event SelectionChanged $command`;
+
+	// Setup the checkbox to kill the job when it is unchecked
+	//string $command = "scriptJob -kill " + $jobNum;
+	//checkBox -e -offCommand $command $parentName;
+
+	// Run the scriptjob once incase we already have a selection
+	UVAutoRatioPro_GetSelectionStats($surfaceAreaText, $uvAreaText, $ratioText);
+}
+
+proc
+UVAutoRatioProUI_CreateInspectorFrame()
+{
+	//
+	// Frame: Inspector
+	//
+	frameLayout -label "Selection Inspector"
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable false
+				-collapse false
+				-marginWidth 4
+				-marginHeight 4;
+
+		UVAutoRatioProUI_CreateInspectorControls(false);
+
+	setParent ..;
+}
+
+global proc
+UVAutoRatioProUI_CreateInspectorControls(int $enabled)
+{
+	$ParentLayout = `columnLayout`;
+
+		columnLayout
+			-columnAlign "center"
+			-rowSpacing 4 -columnWidth 200 -adjustableColumn false;
+
+			rowLayout -numberOfColumns 3 -columnWidth3 75 80 40 -columnAlign 1 "right";
+				text -align "left" -label "Surface Area:" -width 75;
+				$TextSurfaceArea = `textField -text "None" -editable false -width 80 -font "boldLabelFont"`;
+				text -align "left" -label (`eval("currentUnit -q -linear")` + " squared");
+			setParent..;
+			rowLayout -numberOfColumns 3 -columnWidth3 75 80 40 -columnAlign 1 "right";
+				text -align "left" -label "Texture Area:" -width 75;
+				$TextUVArea = `textField -text "None" -editable false -width 80 -font "boldLabelFont"`;
+				text -align "left" -label "units squared";
+			setParent..;
+			rowLayout -numberOfColumns 2 -columnWidth2 75 80 -columnAlign 1 "right";
+				text -align "left" -label "Ratio:" -font "boldLabelFont" -width 75;
+				$TextRatio = `textField -text "0.0" -editable false -width 80 -font "boldLabelFont"`;
+			setParent..;
+		setParent ..;
+
+	setParent ..;
+
+	// checking = create the script and setup to kill the script with that scriptjob
+	$command = "UVAutoRatioProUI_CreateInspector " + $ParentLayout + " " + $TextSurfaceArea + " " + $TextUVArea + " " + $TextRatio;
+	eval($command);
+}
+
+global proc
+UVAutoRatioProUI_InspectorWindow()
+{
+    if (`window -exists "RH_UVAutoRatioProInspectorWindow"`)
+    {
+        deleteUI -window  "RH_UVAutoRatioProInspectorWindow";
+		return;
+    }
+
+ 	string $UVAutoRatio_Window = `window 
+ 								-title "Ratio Inspector"
+ 								-widthHeight 235 115
+ 								-maximizeButton false
+ 								-minimizeButton true
+								-resizeToFitChildren true
+ 								-sizeable true RH_UVAutoRatioProInspectorWindow`;
+
+	UVAutoRatioProUI_CreateInspectorControls(true);
+
+	window -e -widthHeight 235 115 $UVAutoRatio_Window;
+	window -e -resizeToFitChildren true $UVAutoRatio_Window;
+	window -e -resizeToFitChildren false $UVAutoRatio_Window;
+
+	showWindow $UVAutoRatio_Window;
+}

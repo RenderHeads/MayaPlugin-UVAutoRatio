@@ -1,0 +1,214 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+proc
+UVAutoRatioProUI_CreateLicenseFrame()
+{
+	//
+	// Frame: License
+	//
+	frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabLicenseFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse false
+				-marginWidth 4
+				-marginHeight 4;
+
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 4;
+
+			string $licType = "Freeware";
+		
+			//rowColumnLayout -numberOfColumns 2 -columnAttach 1 "right" 0
+			//				-columnWidth 1 65 -columnWidth 2 135;
+			textField -editable false -text $licType;
+
+            if (`about -mac`)
+			{
+				//separator -style "single";
+			}
+			else
+			{
+				separator -style "none";
+			}
+
+		setParent ..;
+
+	setParent ..;
+}
+
+proc
+UVAutoRatioProUI_CreatePluginFrame()
+{
+	//
+	// Frame: Plugin Info
+	//
+	frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse true
+				-marginWidth 4
+				-marginHeight 4;
+
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 2;
+
+			string $pluginName = `UVAR_GetPluginName("UVAutoRatioPro")`;
+			int $isLoaded = `pluginInfo -query -loaded -command $pluginName`;
+			string $vendor, $path, $buildtime, $version;
+			if ($isLoaded > 0)
+			{
+				$vendor = `pluginInfo -query -vendor -command $pluginName`;
+				$path = `pluginInfo -query -path -command $pluginName`;
+
+				string $buffer[];
+				string $versiondata = `pluginInfo -query -version -command $pluginName`;
+				$numTokens = `tokenize $versiondata "," $buffer`;
+				if ($numTokens == 2)
+				{
+					$version = $buffer[0];
+					$buildtime = $buffer[1];
+				}
+			}
+		
+			rowLayout -numberOfColumns 2 -adjustableColumn 2 -columnWidth2 45 175 -columnAlign 1 "right";
+				text -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoName")) -width 45;
+				textField -editable false -text $pluginName;
+			setParent ..;
+			rowLayout -numberOfColumns 2 -adjustableColumn 2 -columnWidth2 45 175 -columnAlign 1 "right";
+				text -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoVersion")) -width 45;
+				textField -editable false -text $version;
+			setParent ..;
+			rowLayout -numberOfColumns 2 -adjustableColumn 2 -columnWidth2 45 175 -columnAlign 1 "right";
+				text -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoBuilt")) -width 45;
+				textField -editable false -text $buildtime;
+			setParent ..;
+			rowLayout -numberOfColumns 2 -adjustableColumn 2 -columnWidth2 45 175 -columnAlign 1 "right";
+				text -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoVendor")) -width 45;
+				textField -editable false -text $vendor;
+			setParent ..;
+			rowLayout -numberOfColumns 2 -adjustableColumn 2 -columnWidth2 45 175 -columnAlign 1 "right";
+				text -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabPluginInfoPath")) -width 45;
+				textField -editable false -text $path;
+			setParent ..;
+
+			// These buttons are for development purposes only
+			//rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnOffset2 2 2 -columnAlign2 "center" "center" -columnAttach2 "both" "both";
+			//	button -label "Load" -command "UVAutoRatioProUI_Load";
+			//	button -label "Unload" -command "UVAutoRatioProUI_Unload";
+			//setParent ..;
+			
+		setParent ..;
+
+	setParent ..;
+}
+
+
+proc
+UVAutoRatioProUI_CreateLinksFrame()
+{
+	//
+	// Frame: Links
+	//
+	frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabLinksFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-marginWidth 4
+				-marginHeight 4;
+
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 4;
+
+			//string $pluginName = `UVAR_GetPluginName("UVAutoRatioPro")`;
+			//int $isLoaded = `pluginInfo -query -loaded -command $pluginName`;
+			//if ($isLoaded > 0)
+			{
+				$manualPath = UVAR_GetModulePath("UVAutoRatioPro") + "docs/manual/index.html";
+				button -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabLinksDocumentation")) -command ("showHelp -absolute \"" + $manualPath + "\"");
+			}
+
+            if (`about -mac`)
+			{
+			}
+			else
+			{
+				separator -style "none";
+			}
+
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutLinksExternalWebsites"));
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutLinksUVAutoRatioHome")) -command ("showHelp -absolute \"http://www.renderheads.com/\"");
+		setParent ..;
+
+	setParent ..;
+}
+
+proc
+UVAutoRatioProUI_CreateCreditsFrame()
+{
+	//
+	// Frame: Credits
+	//
+	frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabCreditsFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-marginWidth 4
+				-marginHeight 4;
+
+		columnLayout -columnAlign "left" -adjustableColumn true -rowSpacing 0 -columnAttach "both" 0;
+
+			iconTextButton -align "left" -style "iconOnly" -image1 "RenderHeads1.xpm" -highlightImage "RenderHeads2.xpm" -label "RenderHeads" -command ("showHelp -absolute \"http://www.renderheads.com/\"");
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabCreditsRenderHeadsServices"));
+
+                        if (`about -mac`)
+			{
+			//	separator -style "single";
+			}
+			else
+			{
+				separator -style "none";
+				separator -style "none";
+				separator -style "none";
+			}
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabCreditsThanksSaehoonLee"));
+                        if (`about -mac`)
+			{
+			//	separator -style "single";
+			}
+			else
+			{
+				separator -style "none";
+				separator -style "none";
+			}
+			text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kAboutTabCreditsRenderHeadsEmail"));
+
+		setParent ..;
+	setParent ..;
+}
+
+global proc string
+UVAutoRatioProUI_CreateAboutTab()
+{
+	$layout = `scrollLayout -horizontalScrollBarThickness 0 -childResizable true`;
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 0 -columnAttach "both" 0;
+	
+			UVAutoRatioProUI_CreateCreditsFrame;
+			UVAutoRatioProUI_CreateLicenseFrame;
+			UVAutoRatioProUI_CreatePluginFrame;
+			UVAutoRatioProUI_CreateLinksFrame;
+
+		// End of columnLayout layout
+		setParent ..;
+	setParent ..;
+
+	return $layout;
+}

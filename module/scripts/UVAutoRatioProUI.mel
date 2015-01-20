@@ -1,0 +1,599 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+// UVAutoRatio 2.6.0 Pro - Maya Plugin
+//
+// Run "UVAutoRatioProUI()"; to launch the UI
+//
+//
+// OptionVars:
+//	int	     UVAutoRatioProUI_UseUVSet         Whether to use the uvsetname
+//	string   UVAutoRatioProUI_UVSetName        The UV Set name
+//  int      UVAutoRatioProUI_Skip		       Whether to skip meshes with the uvset
+//  float    UVAutoRatioProUI_Ratio            The target ratio
+//  int      UVAutoRatioProUI_SelectMode       Selection Mode: 0 = UV, 1 = Face, 2 = Original
+//  int      UVAutoRatioProUI_AutoSelectShell 
+//  int      UVAutoRatioProUI_LayoutMode       Shell Layout Mode = None, 1 = Prevent overlapping
+//  int      UVAutoRatioProUI_ScaleAxis        Axis in which scaling occurs 0 = Both, 1 = Horizontal, 2 = Vertical
+//  int      UVAutoRatioProUI_ResetOnStart     Reset all settings to default on startup
+//  int      UVAutoRatioProUI_AutoCloseUVEditor
+//
+///////////////////////////////////////////////////////////////////////////////
+
+source "UVAutoRatioBase.mel";
+source "UVAutoRatioPro_Utility.mel";
+source "UVAutoRatioProUI_MainTab.mel";
+source "UVAutoRatioProUI_RatioPresets.mel";
+source "UVAutoRatioProUI_SettingsTab.mel";
+source "UVAutoRatioProUI_AboutTab.mel";
+source "UVAutoRatioPro_Inspector.mel";
+
+// Signifying that this is the initial time we're running the plugin in this session of Maya
+global int $RH_UVAR_InitialBootup = 1;
+
+global proc
+UVAutoRatioProUI_Load()
+{
+	if (`exists loadPluginLanguageResources`)
+	{
+		loadPluginLanguageResources("UVAutoRatioPro", "UVAutoRatioBase.res.mel");
+		loadPluginLanguageResources("UVAutoRatioPro", "UVAutoRatioPro.res.mel");
+	}
+	else
+	{
+		source "UVAutoRatioBase.res.mel";
+		source "UVAutoRatioPro.res.mel";
+	}
+
+	string $pluginName = `UVAR_GetPluginName("UVAutoRatioPro")`;
+	int $isLoaded = `pluginInfo -query -loaded -command $pluginName`;
+	if (!$isLoaded)
+	{
+		print "UVAutoRatioPro: Loading Module.\n";
+	
+		//evalDeferred("autoLoadPlugin(\"\", `$pluginName`, `$pluginName`)");
+		//evalDeferred("autoLoadPlugin \"\" " + $pluginName + " " + $pluginName);
+		loadPlugin $pluginName;
+		if (`pluginInfo -query -loaded -command $pluginName`)
+			print "UVAutoRatioPro: Finished Loading Module.\n";
+		else
+			print "UVAutoRatioPro: Error couldn't load plugin\n";
+	}
+}
+
+global proc
+UVAutoRatioProUI_Unload()
+{
+	string $pluginName = `UVAR_GetPluginName("UVAutoRatioPro")`;
+	int $isLoaded = `pluginInfo -query -loaded -command $pluginName`;
+	if ($isLoaded)
+	{
+		print "UVAutoRatioPro: Unloading Module.\n";
+		unloadPlugin -force $pluginName;
+	}
+}
+
+global proc
+UVAutoRatioProUI_Reboot()
+{
+	UVAutoRatioProUI_Unload();
+	//UVAutoRatioProUI_Load;
+
+	deleteUI -window "RH_UVAutoRatioProWindow";
+
+	UVAutoRatioProUI();
+}
+
+global proc
+UVAutoRatioProUI_CreateShellSelectorJob(string $checkbox)
+{
+	polySelectConstraint -shell true;
+
+	// Create scriptjob to apply constrain on selection
+	int $jobNum = `scriptJob -parent $checkbox -event SelectionChanged "polySelectConstraint -shell true;"`;
+	//int $jobNum = `scriptJob -parent $checkbox -event SelectionChanged "polySelectBorderShell 0;"`;
+
+	// Create scriptjob to remove constaint when UI dies
+	int $jobNum2 = `scriptJob -uiDeleted $checkbox "polySelectConstraint -shell false;"`;
+
+	// Setup the checkbox to kill the job when it is unchecked
+	string $command = "optionVar -intValue \"UVAutoRatioProUI_AutoSelectShell\" 0;" + "polySelectConstraint -shell false; scriptJob -kill " + $jobNum + "; scriptJob -kill " + $jobNum2;
+	checkBox -e -offCommand $command $checkbox;
+}
+
+global proc
+UVAutoRatioProUI_ColourMesh()
+{
+	// build the command to run
+	string $command = "UVAutoRatioPro";
+
+	$command +=	" -operation 1 -colour -skipscale;";
+
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Verbose"` == 1)
+	{
+		$command += " -verbose ";
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ShowTimings"` == 1)
+	{
+		$command += " -showTimings ";
+	}
+
+	$command += ";";
+
+	eval($command);
+}
+
+global proc
+UVAutoRatioProUI_ApplyOverlapFix()
+{
+	// build the command to run
+	string $command = "UVAutoRatioPro";
+
+	$command +=	" -operation 1 -layout -skipscale ";
+
+	int $iterations = `optionVar -query "UVAutoRatioProUI_LayoutIterations"`;
+	$command +=	" -layoutIterations " + $iterations;
+	float $iterationStepSize = `optionVar -query "UVAutoRatioProUI_LayoutStep"`;
+	$command +=	" -layoutStep " + $iterationStepSize;
+	float $layoutMinDistance = `optionVar -query "UVAutoRatioProUI_LayoutMinDistance"`;
+	$command +=	" -layoutMinDistance " + $layoutMinDistance;
+
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Verbose"` == 1)
+	{
+		$command += " -verbose ";
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ShowTimings"` == 1)
+	{
+		$command += " -showTimings ";
+	}
+
+	$command += ";";
+
+	// Hide the UV editor window to speed up the operation
+	int $uvWindowToggled = false;
+	if (`window -exists "polyTexturePlacementPanel1Window"` && `optionVar -query "UVAutoRatioProUI_AutoCloseUVEditor"` == 1)
+	{
+		// If not minimised
+		if (!`window -q -iconify "polyTexturePlacementPanel1Window"`)
+		{
+			UVAutoRatioProUI_ToggleTextureView;
+			$uvWindowToggled = true;
+		}
+	}
+
+	// NOTE: we switch to select tool when doing selection to prevent "Some items cannot be moved in the 3D view" warning messages
+	global string $gSelect;
+	string $oldTool = `currentCtx`;     // save previous tool
+	setToolTo $gSelect;
+	
+	eval($command);
+	//print $command;
+
+	setToolTo $oldTool;     // restore tool
+
+	// Show the UV editor window if it was autoclosed
+	if ($uvWindowToggled)
+	{
+		UVAutoRatioProUI_ToggleTextureView;
+	}
+}
+
+
+global proc
+UVAutoRatioProUI_ApplyNormalise()
+{
+	// build the command to run
+	string $command = "UVAutoRatioPro";
+
+	$command +=	" -normalise -skipscale ";
+
+	int $keepAspectRatio = `optionVar -query "UVAutoRatioProUI_NormaliseKeepAspectRatio"`;
+	if ($keepAspectRatio)
+		$command +=	" -keepAspectRatio ";
+
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Verbose"` == 1)
+	{
+		$command += " -verbose ";
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ShowTimings"` == 1)
+	{
+		$command += " -showTimings ";
+	}
+
+	$command += ";";
+
+	// Hide the UV editor window to speed up the operation
+	int $uvWindowToggled = false;
+	if (`window -exists "polyTexturePlacementPanel1Window"` && `optionVar -query "UVAutoRatioProUI_AutoCloseUVEditor"` == 1)
+	{
+		// If not minimised
+		if (!`window -q -iconify "polyTexturePlacementPanel1Window"`)
+		{
+			UVAutoRatioProUI_ToggleTextureView;
+			$uvWindowToggled = true;
+		}
+	}
+
+	// NOTE: we switch to select tool when doing selection to prevent "Some items cannot be moved in the 3D view" warning messages
+	global string $gSelect;
+	string $oldTool = `currentCtx`;     // save previous tool
+	setToolTo $gSelect;
+	
+	eval($command);
+	//print $command;
+
+	setToolTo $oldTool;     // restore tool
+
+	// Show the UV editor window if it was autoclosed
+	if ($uvWindowToggled)
+	{
+		UVAutoRatioProUI_ToggleTextureView;
+	}
+}
+
+global proc
+UVAutoRatioProUI_Apply(int $operationMode)
+{
+	// build the command to run
+	string $command = "UVAutoRatioPro";
+	
+	float $targetRatio = `optionVar -query "UVAutoRatioProUI_Ratio"`;
+	if ($targetRatio > 0.0)
+	{
+		$command += " -ratio " + $targetRatio;
+	}
+
+	int $scalingAxis = `optionVar -query "UVAutoRatioProUI_ScaleAxis"`;
+	if ($scalingAxis > 0)
+	{
+		if ($scalingAxis == 1)
+		{
+			$command +=	" -onlyScaleH ";
+		}
+		else if ($scalingAxis == 2)
+		{
+			$command +=	" -onlyScaleV ";
+		}
+	}
+
+	if ($operationMode == 0 || $operationMode == 1)
+	{
+		$command +=	" -operation " + $operationMode;
+	}
+
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	if ($operationMode == 1)
+	{
+		if (`optionVar -query "UVAutoRatioProUI_LayoutMode"` == 1)
+		{
+			$command += " -layout ";
+			int $iterations = `optionVar -query "UVAutoRatioProUI_LayoutIterations"`;
+			$command +=	" -layoutIterations " + $iterations;
+			float $iterationStepSize = `optionVar -query "UVAutoRatioProUI_LayoutStep"`;
+			$command +=	" -layoutStep " + $iterationStepSize;
+			float $layoutMinDistance = `optionVar -query "UVAutoRatioProUI_LayoutMinDistance"`;
+			$command +=	" -layoutMinDistance " + $layoutMinDistance;
+		}
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_Verbose"` == 1)
+	{
+		$command += " -verbose ";
+	}
+
+	if (`optionVar -query "UVAutoRatioProUI_ShowTimings"` == 1)
+	{
+		$command += " -showTimings ";
+	}
+
+	$command += ";";
+
+	// Hide the UV editor window to speed up the operation
+	int $uvWindowToggled = false;
+	if (`window -exists "polyTexturePlacementPanel1Window"` && `optionVar -query "UVAutoRatioProUI_AutoCloseUVEditor"` == 1)
+	{
+		// If not minimised
+		if (!`window -q -iconify "polyTexturePlacementPanel1Window"`)
+		{
+			UVAutoRatioProUI_ToggleTextureView;
+			$uvWindowToggled = true;
+		}
+	}
+
+	// NOTE: we switch to select tool when doing selection to prevent "Some items cannot be moved in the 3D view" warning messages
+	global string $gSelect;
+	string $oldTool = `currentCtx`;     // save previous tool
+	setToolTo $gSelect;
+	
+	eval($command);
+
+	setToolTo $oldTool;     // restore tool
+
+	// Show the UV editor window if it was autoclosed
+	if ($uvWindowToggled)
+	{
+		UVAutoRatioProUI_ToggleTextureView;
+	}
+}
+
+proc
+UVAutoRatioProUI_RemoveOptionVars()
+{
+	optionVar -remove "UVAutoRatioProUI_ResetOnStart";
+	optionVar -remove "UVAutoRatioProUI_UVSetName";
+	optionVar -remove "UVAutoRatioProUI_Skip";
+	optionVar -remove "UVAutoRatioProUI_Ratio";
+	optionVar -remove "UVAutoRatioProUI_SelectMode";
+	optionVar -remove "UVAutoRatioProUI_Verbose";
+	optionVar -remove "UVAutoRatioProUI_ShowTimings";
+	optionVar -remove "UVAutoRatioProUI_LayoutMode";
+	optionVar -remove "UVAutoRatioProUI_LayoutIterations";
+	optionVar -remove "UVAutoRatioProUI_LayoutStep";
+	optionVar -remove "UVAutoRatioProUI_LayoutMinDistance";
+	optionVar -remove "UVAutoRatioProUI_ScaleAxis";
+	optionVar -remove "UVAutoRatioProUI_AutoSelectShell";
+	optionVar -remove "UVAutoRatioProUI_ScaleAxis";
+	optionVar -remove "UVAutoRatioProUI_AutoSelectShell";
+	optionVar -remove "UVAutoRatioProUI_AutoCloseUVEditor";
+	optionVar -remove "UVAutoRatioProUI_UpdateOnStartup";
+	optionVar -remove "UVAutoRatioProUI_UpdateSkippedVersion";
+	optionVar -remove "UVAutoRatioProUI_UpdateOnStartup";
+	optionVar -remove "UVAutoRatioProUI_NormaliseKeepAspectRatio";
+
+	// Frames
+	optionVar -remove "UVAutoRatioProUI_Frame_UVSet";
+	optionVar -remove "UVAutoRatioProUI_Frame_DisplayOptions";
+	optionVar -remove "UVAutoRatioProUI_Frame_LayoutOptions";
+	optionVar -remove "UVAutoRatioProUI_Frame_MiscOptions";
+	optionVar -remove "UVAutoRatioProUI_Frame_UpdateOptions";
+	optionVar -remove "UVAutoRatioProUI_Frame_UVShellFinder";
+	optionVar -remove "UVAutoRatioProUI_Frame_UVShellSelection";
+	optionVar -remove "UVAutoRatioProUI_Frame_UVTools";
+	optionVar -remove "UVAutoRatioProUI_Frame_OtherTools";
+}
+
+proc
+UVAutoRatioProUI_CreateOptions(int $force)
+{
+	if (`optionVar -q "UVAutoRatioProUI_ResetOnStart"` == 1)
+	{
+		$force = 1;
+	}
+
+	// initialise to default values if the variables doesn't exist or if forced to reset
+	if (!`optionVar -exists "UVAutoRatioProUI_UVSetName"` || $force)
+		optionVar -stringValue "UVAutoRatioProUI_UVSetName" "";
+
+	if (!`optionVar -exists "UVAutoRatioProUI_UseUVSet"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_UseUVSet" 0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_Skip"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_Skip" 1;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_Ratio"` || $force)
+		optionVar -floatValue "UVAutoRatioProUI_Ratio" 16.0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_SelectMode"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_SelectMode" 1;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_Verbose"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Verbose" 0;
+	if (!`optionVar -exists "UVAutoRatioProUI_ShowTimings"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_ShowTimings" 0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_LayoutMode"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_LayoutMode" 0;
+	if (!`optionVar -exists "UVAutoRatioProUI_LayoutIterations"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_LayoutIterations" 10000;
+	if (!`optionVar -exists "UVAutoRatioProUI_LayoutStep"` || $force)
+		optionVar -floatValue "UVAutoRatioProUI_LayoutStep" 0.001;
+	if (!`optionVar -exists "UVAutoRatioProUI_LayoutMinDistance"` || $force)
+		optionVar -floatValue "UVAutoRatioProUI_LayoutMinDistance" 0.0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_ScaleAxis"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_ScaleAxis" 0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_AutoSelectShell"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_AutoSelectShell" 0;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_AutoCloseUVEditor"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_AutoCloseUVEditor" 1;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_UpdateOnStartup"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_UpdateOnStartup" 1;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_UpdateSkippedVersion"` || $force)
+		optionVar -stringValue "UVAutoRatioProUI_UpdateSkippedVersion" "0";
+
+	if (!`optionVar -exists "UVAutoRatioProUI_NormaliseKeepAspectRatio"` || $force)
+		optionVar -intValue "UVAutoRatioProUI_NormaliseKeepAspectRatio" 1;
+
+	// Frames Collapse
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_UVSet"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_UVSet" 0;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_DisplayOptions"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_DisplayOptions" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_LayoutOptions"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_LayoutOptions" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_MiscOptions"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_MiscOptions" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_UpdateOptions"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_UpdateOptions" 1;
+
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_UVShellFinder"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_UVShellFinder" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_UVShellSelection"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_UVShellSelection" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_UVTools"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_UVTools" 1;
+	if (!`optionVar -exists "UVAutoRatioProUI_Frame_OtherTools"` || $force)
+        optionVar -intValue "UVAutoRatioProUI_Frame_OtherTools" 0;
+
+	// Only initialise these variables if they don't exist
+	if (!`optionVar -exists "UVAutoRatioProUI_ResetOnStart"`)
+		optionVar -intValue "UVAutoRatioProUI_ResetOnStart" 0;
+}
+
+global proc
+UVAutoRatioProUI_ResetSettings()
+{
+	UVAutoRatioProUI_CreateOptions(true);
+
+	deleteUI -window "RH_UVAutoRatioProWindow";
+
+	UVAutoRatioProUI();
+}
+
+global proc 
+UVAutoRatioProUI()
+{
+	global int $RH_UVAR_InitialBootup;
+
+	UVAutoRatioProUI_CreateOptions(false);
+
+//	UVAutoRatioProUI_Unload();
+	UVAutoRatioProUI_Load();
+
+    if (`window -exists "RH_UVAutoRatioProWindow"`)
+    {
+		// If minimised
+		if (`window -q -iconify "RH_UVAutoRatioProWindow"`)
+		{
+			window -e -iconify false "RH_UVAutoRatioProWindow";
+		}
+        return;
+    }
+
+	//
+	// Create window
+	//
+	string $title="UVAutoRatio 2.6.0 Pro";
+ 	string $UVAutoRatio_Window = `window 
+ 								-title $title
+ 								-widthHeight 256 359
+ 								-maximizeButton false
+ 								-minimizeButton false
+ 								-sizeable true RH_UVAutoRatioProWindow`;
+
+	string $form = `formLayout -numberOfDivisions 100 -width 256 -height 359 MainFormLayout`;
+
+	//
+	// Create UI
+	//
+	$Tabs = `tabLayout -innerMarginWidth 0 -innerMarginHeight 0 -childResizable false`;
+		$TabMain = `UVAutoRatioProUI_CreateMainTab`;
+		$TabOptions = `UVAutoRatioProUI_CreateOptionsTab`;
+		$TabAbout = `UVAutoRatioProUI_CreateAboutTab`;
+	setParent ..;
+
+
+	//	
+	// Assign Tabs
+	//
+	tabLayout -edit
+			-tabLabel $TabMain (UVAR_uiRes("m_UVAutoRatioPro.kTabTitleUVAutoratio"))
+			-tabLabel $TabOptions (UVAR_uiRes("m_UVAutoRatioPro.kTabTitleSettings"))
+			-tabLabel $TabAbout (UVAR_uiRes("m_UVAutoRatioPro.kTabTitleAbout"))
+			$Tabs;
+	setParent ..;
+
+	formLayout -edit
+		-attachForm     $Tabs     "top"    2
+		-attachForm     $Tabs     "left"   2
+		-attachForm     $Tabs     "right"  2
+        -attachForm     $Tabs     "bottom"  2
+		$form;
+
+	//
+	// Resize window
+	//
+	window -e -widthHeight 256 359 $UVAutoRatio_Window;
+	window -e -resizeToFitChildren true $UVAutoRatio_Window;
+	window -e -resizeToFitChildren false $UVAutoRatio_Window;
+
+ 	showWindow $UVAutoRatio_Window;
+
+	if ($RH_UVAR_InitialBootup == 1)
+	{
+		$RH_UVAR_InitialBootup = 0;
+		// Note: This is where checks for new versions and license was done.
+	}
+}
+
+UVAutoRatioProUI_Load();

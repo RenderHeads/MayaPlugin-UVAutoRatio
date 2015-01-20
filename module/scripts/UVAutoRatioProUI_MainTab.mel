@@ -1,0 +1,393 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+proc
+UVAutoRatioProUI_MultiSelect(int $isFaceMode, string $names[])
+{
+	// NOTE: we switch to select tool when doing selection to prevent "Some items cannot be moved in the 3D view" warning messages
+
+	// maya global for selection tool
+	global string $gSelect;
+
+	// save current tool
+	string $oldTool = `currentCtx`;
+
+	// set maya to selection tool
+	setToolTo $gSelect;
+
+	select -clear;
+
+	// Unpack strings
+	for ($name in $names)
+	{
+		// Split string on "*" to separate friendly string and selection string
+		string $buffer[];
+		$numTokens = `tokenize $name "*" $buffer`;
+
+		if ($numTokens == 2)
+		{
+			string $selectItems[];
+			$selectItems = stringToStringArray($buffer[1], " ");
+
+			select -add $selectItems;
+		}
+		else
+		{
+			error "Unexpected number of tokens";
+		}
+	}
+
+	// Optionally convert the selection to faces
+	if ($isFaceMode == 1)
+	{
+		select `polyListComponentConversion -fromUV -fromFace -fromVertex -toFace -internal`;
+	}
+	else if ($isFaceMode == 0)
+	{
+		select `polyListComponentConversion -fromUV -fromFace -fromVertex -toUV -internal`;
+	}
+
+	// restore tool
+	setToolTo $oldTool;
+}
+
+global proc
+UVAutoRatioProUI_SelectUVShell(int $isFaceMode, string $listControl)
+{
+	string $names[] = `textScrollList -q -selectItem $listControl`;
+	if (size($names)>0)
+	{
+		UVAutoRatioProUI_MultiSelect($isFaceMode, $names);
+	}
+}
+
+global proc
+UVAutoRatioProUI_SetRatioFromSelection(string $textControl)
+{
+	// Convert selection to a single string
+	string $selectionString = `UVAutoRatioProUI_GetSelectionAsString`;
+
+
+    string $command = "GetSurfaceUVArea ";
+	int $useUVSet = `optionVar -query "UVAutoRatioProUI_UseUVSet"`;
+	if ($useUVSet > 0)
+	{
+		string $UVSetName = `optionVar -query "UVAutoRatioProUI_UVSetName"`;
+		if (size($UVSetName)>0)
+		{
+			$command += " -uvSetName " + $UVSetName;
+			
+			int $skip = `optionVar -query "UVAutoRatioProUI_Skip"`;
+			if ($skip == 0)
+			{
+				$command += " -fallback";
+			}
+		}
+	}
+
+	float $areas[] = eval($command);
+	float $totalSurfaceArea = $areas[0];
+	float $totalUVArea = $areas[1];
+	float $ratio = $areas[2];
+	
+	/*// Prevent divide-by-zero
+	if ($totalUVArea != 0.0 && $totalSurfaceArea != 0.0)
+	{
+		$ratio = ($totalSurfaceArea / $totalUVArea);
+	}*/
+
+	optionVar -floatValue "UVAutoRatioProUI_Ratio" $ratio;
+
+	floatField -e -value $ratio $textControl;
+}
+
+global proc
+UVAutoRatioProUI_SelectUVShellCheck(string $listControl)
+{
+	int $isFaceMode = `optionVar -query "UVAutoRatioProUI_SelectMode"`;
+	UVAutoRatioProUI_SelectUVShell($isFaceMode, $listControl);
+}
+
+global proc
+UVAutoRatioProUI_UpdateUVShellListFromSelection(string $listControl)
+{
+    string $UVShellList[] = `eval("GetUVShellSelectionStrings")`;
+    
+    textScrollList -e -removeAll $listControl;
+
+	int $index = 0;
+    for ($UVShell in $UVShellList)
+    {
+		//string $str = ($index + ") " + $UVShell);
+	    textScrollList -e -append $UVShell $listControl;
+		$index++;
+    }
+
+	textScrollList -e -width 200 $listControl;
+}
+
+global proc
+UVAutoRatioProUI_ToggleTextureView()
+{
+	if (`window -exists "polyTexturePlacementPanel1Window"`)
+	{
+		deleteUI -window "polyTexturePlacementPanel1Window";
+	}
+	else
+	{
+		TextureViewWindow;
+	}
+}
+
+proc
+UVAutoRatioProUI_CreateUVShellFinderFrame()
+{
+	//
+	// Frame: UV Shell Finder
+	//
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_UVShellFinder"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kUVShellFinderFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+		columnLayout -adjustableColumn true -rowSpacing 4;
+
+				$UVShellList = `textScrollList -numberOfRows 6 -allowMultiSelection true -width 200 -height 120`;
+				$ButtonUpdateUVShellList = `button -width 180 -label (UVAR_uiRes("m_UVAutoRatioPro.kUVShellFinderUpdateButton"))`;
+
+                //$AutoCheckbox = `checkBox -align "left" -label "Auto-select shell"`;
+    	setParent ..;
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVShellFinder 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVShellFinder 0" $frame;
+
+	// Select shell from list selects the uv's
+	textScrollList -edit -selectCommand ("UVAutoRatioProUI_SelectUVShellCheck " + $UVShellList) $UVShellList;
+
+	// Double-click to zoom to shell
+	textScrollList -edit -doubleClickCommand ("viewFit -fitFactor 0.4") $UVShellList;
+
+	// Update the list from selection
+	$doCommand=("UVAutoRatioProUI_UpdateUVShellListFromSelection " + $UVShellList);
+	button -edit -command $doCommand $ButtonUpdateUVShellList;
+
+	//// checking = create the script and setup to kill the script with that scriptjob
+	//$command = "UVAutoRatioProUI_CreateShellInspector " + $AutoCheckbox + " " + $UVShellList;
+	//checkBox -e -onCommand  $command $AutoCheckbox;
+/*
+	//
+	// Frame: UV Shell Selection
+	//
+	$frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_UVShellSelection"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kUVShellSelectionFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+		columnLayout -adjustableColumn true -rowSpacing 4;
+                $AutoCheckbox = `checkBox -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kUVShellSelectionAutoSelect"))`;
+    	setParent ..;
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVShellSelection 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVShellSelection 0" $frame;
+*/
+}
+
+proc
+UVAutoRatioProUI_CreateToolsFrame()
+{
+	//
+	// Frame: Tools
+	//
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_UVTools"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+        columnLayout -adjustableColumn true -rowSpacing 4;
+            rowLayout -nc 2 -adjustableColumn 2 -columnAttach2 "both" "both" -columnOffset2 2 2 -columnAlign2 "center" "center";
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsRatioInspector")) -command ("UVAutoRatioProUI_InspectorWindow");	
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsTextureView")) -command ("UVAutoRatioProUI_ToggleTextureView;");
+            setParent ..;
+            rowLayout -nc 2 -adjustableColumn 2 -columnAttach2 "both" "both" -columnOffset2 2 2 -columnAlign2 "center" "center";
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsUnfold")) -command ("performUnfold 0;") RH_UVAR_UVUnfoldButton;
+	            popupMenu -button 3
+		            -parent RH_UVAR_UVUnfoldButton
+		            -postMenuCommand "performUnfold 1";
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsLayout")) -command ("performPolyLayoutUV 0;") RH_UVAR_LayoutUVButton;
+	            popupMenu -button 3
+		            -parent RH_UVAR_LayoutUVButton
+		            -postMenuCommand "performPolyLayoutUV 1";
+            setParent ..;
+            rowLayout -nc 2 -adjustableColumn 2 -columnAttach2 "both" "both" -columnOffset2 2 2 -columnAlign2 "center" "center";
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsMerge")) -command ("performPolyMergeUV 0;") RH_UVAR_MergeUVButton;
+	            popupMenu -button 3
+		            -parent RH_UVAR_MergeUVButton
+		            -postMenuCommand "performPolyMergeUV 1";
+			    button -label (UVAR_uiRes("m_UVAutoRatioPro.kUVToolsCutUVEdges")) -command ("polyPerformAction polyMapCut e 0;") RH_UVAR_CutUVEdgesButton;
+            setParent ..;
+			//button -label "Stretch Display" -command ("UVAutoRatioProUI_ColourMesh");	
+			
+    	setParent ..;
+	setParent ..;
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVTools 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_UVTools 0" $frame;	
+}
+
+proc
+UVAutoRatioProUI_CreateMainFrame()
+{
+	//
+	// Frame: Main Controls
+	//
+	frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kRatioFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable false
+				-marginWidth 4
+				-marginHeight 4;
+
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 4;
+
+            rowLayout -adjustableColumn 1 -numberOfColumns 1 -columnWidth1 200 -columnAttach1 "both" -columnAlign1 "center" -columnOffset1 2;
+			    $ButtonAdd = `button -height 40 -label (UVAR_uiRes("m_UVAutoRatioPro.kSetRatioFromSelection"))`;
+			setParent..;
+
+			rowLayout -adjustableColumn 3 -numberOfColumns 3 -columnWidth3 20 90 100 -columnAttach3 "both" "both" "both" -columnOffset3 2 2 2;
+				$Presets = `iconTextStaticLabel -image1 "shelfOptions.xpm" -annotation (UVAR_uiRes("m_UVAutoRatioPro.kPresetButton")) -height 16 -width 20`;
+				$TextCurrentRatio = `text -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kCurrentRatio")) -font "boldLabelFont" -width 90`;
+				$TextRatio = `floatField -minValue 0 -maxValue 90000000 -value 0 -precision 10 -step 1 -width 90 -editable true`;
+			setParent..;
+
+			$PresetsMenu = `popupMenu -button 1 -parent $Presets`;
+			BuildRatioPresetsMenu($PresetsMenu, $TextRatio);
+
+			/*rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2;
+				text -align "left" -label "UV Set:" -font "boldLabelFont" -width 90;
+				textField -editable false UVAR2PRO_UVSET;
+			setParent..;*/
+
+			rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2 -columnAlign2 "center" "center";
+				$ButtonApply1 = `button -height 40 -label (UVAR_uiRes("m_UVAutoRatioPro.kApplyToObjects"))`;
+				$ButtonApply2 = `button -height 40 -label (UVAR_uiRes("m_UVAutoRatioPro.kApplyToShells"))`;
+			setParent..;
+
+		setParent ..;
+
+	setParent ..;
+
+	//
+	// Frame: Extra Controls
+	//
+	int $frameCollapse = `optionVar -query "UVAutoRatioProUI_Frame_OtherTools"`;
+	$frame = `frameLayout -label (UVAR_uiRes("m_UVAutoRatioPro.kExtraFrameTitle"))
+				-labelIndent 4
+				-borderStyle "etchedIn"
+				-collapsable true
+				-collapse $frameCollapse
+				-marginWidth 4
+				-marginHeight 4`;
+
+		columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 4;
+
+			button -label (UVAR_uiRes("m_UVAutoRatioPro.kFixShellOverlaps")) -command "UVAutoRatioProUI_ApplyOverlapFix";
+
+			separator -style "none";
+
+			rowLayout -adjustableColumn 2 -numberOfColumns 2 -columnWidth2 100 100 -columnAttach2 "both" "both" -columnOffset2 2 2 -columnAlign2 "center" "center";
+				$CheckboxAspectRatio = `checkBox -align "right" -label (UVAR_uiRes("m_UVAutoRatioPro.kNormaliseKeepAspectRatio"))`;
+				button -label (UVAR_uiRes("m_UVAutoRatioPro.kNormalise")) -command "UVAutoRatioProUI_ApplyNormalise";
+			setParent..;
+
+			separator -style "none";
+
+			$AutoCheckbox = `checkBox -align "left" -label (UVAR_uiRes("m_UVAutoRatioPro.kUVShellSelectionAutoSelect"))`;
+
+		setParent ..;
+
+	setParent ..;
+
+	//
+	// COMMANDS
+	//
+
+	// Add button
+	$command = "UVAutoRatioProUI_SetRatioFromSelection " + $TextRatio;
+	button -e -command $command $ButtonAdd;
+
+	// Changing ratio number manually
+	$command = "UVAR_SetVarFromFloatField " + $TextRatio + " UVAutoRatioProUI_Ratio";
+	//$command = "optionVar -floatValue \"UVAutoRatioProUI_Ratio\"" + "`floatField -query -value " + $TextRatio + "`";
+	floatField -edit -changeCommand $command $TextRatio;
+
+	// Set floatField ratio value to the variable
+	float $targetRatio = `optionVar -query "UVAutoRatioProUI_Ratio"`;
+	floatField -edit -value $targetRatio $TextRatio;
+
+	button -e -command "UVAutoRatioProUI_Apply 0" $ButtonApply1;
+	button -e -command "UVAutoRatioProUI_Apply 1" $ButtonApply2;
+
+	if (`optionVar -query "UVAutoRatioProUI_NormaliseKeepAspectRatio"` == 1)
+		checkBox -e -value true $CheckboxAspectRatio;
+	else
+		checkBox -e -value false $CheckboxAspectRatio;
+	checkBox -e -onCommand ("optionVar -intValue \"UVAutoRatioProUI_NormaliseKeepAspectRatio\" 1") -offCommand ("optionVar -intValue \"UVAutoRatioProUI_NormaliseKeepAspectRatio\" 0") $CheckboxAspectRatio;
+
+	$command = "optionVar -intValue \"UVAutoRatioProUI_AutoSelectShell\" 1;" + ("UVAutoRatioProUI_CreateShellSelectorJob " + $AutoCheckbox);
+	checkBox -e -onCommand  $command $AutoCheckbox;
+
+	if (`optionVar -q "UVAutoRatioProUI_AutoSelectShell"` == 0)
+	{
+		checkBox -e -value false $AutoCheckbox;
+	}
+	else
+	{
+		checkBox -e -value true $AutoCheckbox;
+		UVAutoRatioProUI_CreateShellSelectorJob($AutoCheckbox);
+	}
+
+	frameLayout	-e -collapseCommand "optionVar -intValue UVAutoRatioProUI_Frame_OtherTools 1" $frame;
+	frameLayout	-e -expandCommand "optionVar -intValue UVAutoRatioProUI_Frame_OtherTools 0" $frame;	
+}
+
+global proc string
+UVAutoRatioProUI_CreateMainTab()
+{
+	string $layout = `scrollLayout -horizontalScrollBarThickness 0 -childResizable true`;
+        columnLayout -columnAlign "center" -adjustableColumn true -rowSpacing 0 -columnAttach "both" 0;
+
+			UVAutoRatioProUI_CreateMainFrame;
+			UVAutoRatioProUI_CreateUVShellFinderFrame;
+			UVAutoRatioProUI_CreateToolsFrame;
+
+		// End of columnLayout layout
+		setParent ..;
+
+	setParent ..;
+
+	return $layout;
+}

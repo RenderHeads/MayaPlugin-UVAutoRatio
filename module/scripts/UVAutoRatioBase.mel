@@ -1,0 +1,190 @@
+//
+// UVAutoRatio Maya Plugin Source Code
+// Copyright (C) 2007-2014 RenderHeads Ltd.
+//
+// This source is available for distribution and/or modification
+// only under the terms of the MIT license.  All rights reserved.
+//
+// The source is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// FITNESS FOR A PARTICULAR PURPOSE. See the MIT license
+// for more details.
+//
+
+global proc
+UVAR_DisplayString(string $value, string $name)
+{
+	// Older versions of maya do not support to -replace flag
+	if (`exists uiRes`)
+	{
+		displayString -replace -value ($value) $name;
+	}
+	else
+	{
+		if (!`displayString -exists $name`)
+			displayString -value ($value) $name;
+	}
+}
+
+global proc string
+UVAR_uiRes( string $lookUpKey )
+{
+	string $result = "Missing";
+
+	// Older versions of Maya do not have the uiRes command
+	if (`exists uiRes`)
+	{
+		if (catch($result = uiRes($lookUpKey)))
+		{
+			warning ("Error: string not found: " + $lookUpKey);
+		}
+	}
+	else
+	{
+		if(!`displayString -exists $lookUpKey`)
+		{
+			warning ("Error: string not found: " + $lookUpKey);
+		}
+		else
+		{
+			$result = `displayString -q -value $lookUpKey`;
+		}
+	}
+
+	return $result;
+}
+
+global proc string
+UVAR_GetMayaVersionNumber()
+{
+	string $mayaVersion = `about -version`;
+	
+	if (startsWith($mayaVersion, "2015"))
+	{
+		return "2015";
+	}
+	if (startsWith($mayaVersion, "2014"))
+	{
+		return "2014";
+	}
+	if (startsWith($mayaVersion, "2013"))
+	{
+		return "2013";
+	}
+	if (startsWith($mayaVersion, "2012"))
+	{
+		return "2012";
+	}
+	if (startsWith($mayaVersion, "2011"))
+	{
+		return "2011";
+	}
+	if (startsWith($mayaVersion, "2010"))
+	{
+		return "2010";
+	}
+	if (startsWith($mayaVersion, "2009"))
+	{
+		return "2009";
+	}
+	if (startsWith($mayaVersion, "2008"))
+	{
+		return "2008";
+	}
+	if (startsWith($mayaVersion, "8.5"))
+	{
+		return "85";
+	}
+	if (startsWith($mayaVersion, "8.0"))
+	{
+		return "80";
+	}
+	if (startsWith($mayaVersion, "7.0"))
+	{
+		return "70";
+	}
+	if (startsWith($mayaVersion, "6.5"))
+	{
+		return "65";
+	}
+	if (startsWith($mayaVersion, "6.0"))
+	{
+		return "60";
+	}
+
+	if (`exists format`)
+	{
+		error `format -stringArg $mayaVersion (UVAR_uiRes("m_UVAutoRatioBase.kMayaVersionNotSupported"))`;
+	}
+	else
+	{
+		error ((UVAR_uiRes("m_UVAutoRatioBase.kMayaVersionNotSupportedSplit1")) + " (" + $mayaVersion + ") " + UVAR_uiRes("m_UVAutoRatioBase.kMayaVersionNotSupportedSplit2"));
+	}
+  
+  return "invalid";
+}
+
+global proc string
+UVAR_GetPluginName(string $productName)
+{
+	string $version = "";
+	
+	string $mayaVersion = `about -version`;
+
+	$version = UVAR_GetMayaVersionNumber();
+	if ($version == "invalid")
+		return "invalid";
+
+	// Mac uses universal binaries
+	if (!`about -mac`)
+	{
+		if (endsWith($mayaVersion, "x64"))
+		{
+			$version += "x64";
+		}
+	}
+
+	return $productName + $version;
+}
+
+global proc string
+UVAR_GetModulePath(string $productName)
+{
+	string $pluginName = UVAR_GetPluginName($productName);
+	string $pluginPath = `pluginInfo -query -path -command $pluginName`;
+
+	string $extension = ".mll";
+	if (!`about -windows`)
+	{
+		$extension = ".so";
+		if (!`about -linux`)
+		{
+			$extension = ".bundle";
+			if (!`about -mac`)
+			{
+				warning (UVAR_uiRes("m_UVAutoRatioBase.kCantDetermineModulePath"));
+			}
+		}
+	}
+	if (!endsWith($pluginPath, $extension))
+	{
+		warning (UVAR_uiRes("m_UVAutoRatioBase.kCantDetermineModulePath"));
+	}
+
+	$pathPrefix = "plug-ins/" + $pluginName + $extension;
+	return startString($pluginPath, size($pluginPath) - size($pathPrefix));
+}
+
+global proc
+UVAR_SetVarFromFloatField(string $control, string $varName)
+{
+	float $val = `floatField -query -value $control`;
+	optionVar -floatValue $varName $val;
+}
+
+global proc
+UVAR_SetVarFromIntField(string $control, string $varName)
+{
+	float $val = `intField -query -value $control`;
+	optionVar -intValue $varName $val;
+}
