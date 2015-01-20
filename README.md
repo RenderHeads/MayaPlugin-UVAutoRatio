@@ -47,7 +47,7 @@ For example:
 
 In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK folder.  
 
-##Compiling UVAutoRatio (Windows)
+##Compiling for Windows
 
 + The project solution is created with Visual Studio 2008.
 + Make sure you have set up your Maya SDK files as specified above
@@ -72,12 +72,20 @@ In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK 
 			For Maya 2011 32-bit it would read "$(OutDir)";"$(MAYALIBBASE)\Windows\2011\lib";
 			For Maya 2011 64-bit it would read "$(OutDir)";"$(MAYALIBBASE)\Windows\2011\lib64";
 
-##Compiling UVAutoRatio (MacOSX)
+##Compiling for MacOSX
 
-##Compiling UVAutoRatio (Linux)
++ Use XCode to load the project "uvAutoRatioPro.xcodeproj"
 
+##Compiling for Linux
 
-##Packaging for Release (Windows)
++ See build.sh and buildall.sh
++ Use 'make'
++ The build script needs the following variales defines:
+	+ export ARCH=64		(for 64-bit building)
+	+ export MAYAVER=2011		(this is the maya version number, eg 8.5)
+	+ export MAYAVERs=2011		(this is the string version of the Maya version, so Maya 8.5 would be 85)
+
+##Packaging for Windows
 
 + We build to a setup executable
 + Install NSI v2.46
@@ -87,6 +95,6 @@ In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK 
 
 NOTE: If the installer fails to run, it may be because using a mapped drive
 
-##Packaging for Release (OSX and Linux)
+##Packaging for OSX and Linux
 
 + There is no setup, simply ZIP up all the files in the module folder to an appropriatly named ZIP file.
