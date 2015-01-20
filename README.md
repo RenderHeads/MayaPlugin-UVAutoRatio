@@ -12,11 +12,11 @@ The core Maya SDK must be available to the plugin in order to compile.  The 3 fo
 
 In order to build for multiple versions of Maya we use the following directory structure:
 
-MayaSDK/
-	Common/
-	Windows/
-	MacOSX/
-	Linux/
+	MayaSDK/
+		Common/
+		Windows/
+		MacOSX/
+		Linux/
 
 The Common folder contains all of the header files (contents of include folder), and the platform folders contain all the of the platform specific libraries (lib and lib64 folder).
 
