@@ -90,7 +90,7 @@ To add a new configuration for another version of Maya:
 ##Packaging for Windows
 
 + We build to a setup executable
-+ Install NSI v2.46
++ Install NSIS v2.46 with the FindProcDLL plugin (http://nsis.sourceforge.net/FindProcDLL_plug-in)
 + Open InstallScript.NSI and increment the version numbers at the top to match the new build version number
 + Right-click the InstallScript.NSI and compile with NSI
 + The resulting installer file should appear in the Releases folder
