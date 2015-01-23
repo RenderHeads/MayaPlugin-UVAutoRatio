@@ -14,8 +14,6 @@
 #include "MayaPCH.h"
 #include "MayaUtility.h"
 #include "Utility.h"
-#include "UVMesh.h"
-#include "UVShell.h"
 #include "UVSpringLayout.h"
 #include "UVAutoRatioPro.h"
 
@@ -1151,12 +1149,8 @@ UVAutoRatioPro::ProcessAsUVShellLevel()
 			}
 		}
 
-		//UVMesh* uvMesh = NULL;
 		if (potentialMeshes[i]->validShells.size() > 0)
 		{
-			//uvMesh = new UVMesh(dagPath, desiredUVSetName);
-			//m_uvMeshes.push_back(uvMesh);
-
 			Mesh* mesh = new Mesh();
 			mesh->dagPath = dagPath;
 			m_meshes.push_back(mesh);
@@ -1189,9 +1183,6 @@ UVAutoRatioPro::ProcessAsUVShellLevel()
 
 				if (uvComponents.elementCount() > 0)
 				{
-					//UVShell* shell = new UVShell(uvMesh, uvComponentObject, desiredUVSetName);
-					//m_uvShells.push_back(shell);
-
 					ShellJob* job = new ShellJob();
 					job->mesh = mesh;
 					job->meshShellNumber = shellIndex;

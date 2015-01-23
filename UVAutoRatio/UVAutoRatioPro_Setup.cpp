@@ -14,7 +14,7 @@
 #include "MayaPCH.h"
 #include "MayaUtility.h"
 #include "Utility.h"
-#include "UVShell.h"
+//#include "UVShell.h"
 #include "UVAutoRatioPro.h"
 
 const char* UVAutoRatioPro::UVAutoRatio_Help[] = {
