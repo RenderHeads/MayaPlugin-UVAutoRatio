@@ -1,5 +1,5 @@
-# MayaPlugin-UVAutoRatio
-Plugin for Autodesk Maya for unifying texture area usage.
+# UV Auto Ratio
+######Plugin for Autodesk Maya for unifying texture area usage.
 Created by RenderHeads Ltd in 2007, source released in 2015.
 Plugin website: http://renderheads.com/portfolio/UVAutoRatio/
 
