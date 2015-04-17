@@ -14,6 +14,7 @@
 #ifndef MAYAUTILITY_H
 #define MAYAUTILITY_H
 
+#include <minmax.h>
 #include <iostream>
 #include <vector>
 #include <string>
