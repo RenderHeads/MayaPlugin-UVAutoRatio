@@ -59,6 +59,10 @@ UVAR_GetMayaVersionNumber()
 {
 	string $mayaVersion = `about -version`;
 	
+	if (startsWith($mayaVersion, "2016"))
+	{
+		return "2016";
+	}
 	if (startsWith($mayaVersion, "2015"))
 	{
 		return "2015";
