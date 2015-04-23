@@ -42,6 +42,8 @@ Global
 		Release Maya2014|x64 = Release Maya2014|x64
 		Release Maya2015|Win32 = Release Maya2015|Win32
 		Release Maya2015|x64 = Release Maya2015|x64
+		Release Maya2016|Win32 = Release Maya2016|Win32
+		Release Maya2016|x64 = Release Maya2016|x64
 		Release Maya60|Win32 = Release Maya60|Win32
 		Release Maya60|x64 = Release Maya60|x64
 		Release Maya65|Win32 = Release Maya65|Win32
@@ -125,6 +127,9 @@ Global
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2015|Win32.ActiveCfg = Release Maya2015|Win32
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2015|x64.ActiveCfg = Release Maya2015|x64
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2015|x64.Build.0 = Release Maya2015|x64
+		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2016|Win32.ActiveCfg = Release Maya2016|x64
+		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2016|x64.ActiveCfg = Release Maya2016|x64
+		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya2016|x64.Build.0 = Release Maya2016|x64
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya60|Win32.ActiveCfg = Release Maya60|Win32
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya60|Win32.Build.0 = Release Maya60|Win32
 		{681412B0-F197-4A2F-9263-DEA2E8690146}.Release Maya60|x64.ActiveCfg = Release Maya60|x64
