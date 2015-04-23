@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#if MAYA85 || MAYA2008 || MAYA2009 || MAYA2010 || MAYA2011 || MAYA2012 || MAYA2013 || MAYA20135 || MAYA2014 || MAYA2015
+#if MAYA85 || MAYA2008 || MAYA2009 || MAYA2010 || MAYA2011 || MAYA2012 || MAYA2013 || MAYA20135 || MAYA2014 || MAYA2015 || MAYA2016
 #include <iostream>
 using namespace std;
 #endif
