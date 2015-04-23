@@ -16,6 +16,7 @@
 
 #ifdef WIN32
 
+#include <windows.h>
 #include <mmsystem.h>
 #pragma comment(lib,"winmm.lib")
 // Ctime.h
