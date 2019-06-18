@@ -3,8 +3,8 @@
 Created by RenderHeads Ltd in 2007, source released in 2015.
 
 [Tutorial Video](https://vimeo.com/856301)
-[Original website] (http://renderheads.com/portfolio/UVAutoRatio/)
-[Cached website] (http://renderheads.com/portfolio/UVAutoRatio/)
+[Original website](http://renderheads.com/portfolio/UVAutoRatio/)
+[Cached website](http://renderheads.com/portfolio/UVAutoRatio/)
 
 ## Introduction
 
@@ -18,22 +18,23 @@ Enter UVAutoRatio Pro: the complete tool for automating all texel ratio tasks.
 
 ## Features
 
-..* Automatically scale UVs based on surface area
-..* Fast and accurate processing algorithm
-..* Ability to specify UV-set
-..* Operates on UV shells
-..* Automatically moves overlapping UV shells
-..* Normalise across multiple objects
-..* UV shell finder tool
-..* Ratio inspector tool
-..* Maintains settings between sessions
++ Automatically scale UVs based on surface area
++ Fast and accurate processing algorithm
++ Ability to specify UV-set
++ Operates on UV shells
++ Automatically moves overlapping UV shells
++ Normalise across multiple objects
++ UV shell finder tool
++ Ratio inspector tool
++ Maintains settings between sessions
 
 ## Open Source
 
 After selling this product for many years, we decided to open source it so that development could continue without us.
 
-..* Written in C++.
-..* Maya scripts written in MEL.
++ Written in C++.
++ Maya scripts written in MEL.
++ Builds for Windows, macOS and Linux
 
 If you are prompted for a license key, you can use the following:
 
@@ -133,6 +134,6 @@ To add a new configuration for another version of Maya:
 
 NOTE: If the installer fails to run, it may be because using a mapped drive
 
-##P ackaging for OSX and Linux
+## Packaging for OSX and Linux
 
 + There is no setup, simply ZIP up all the files in the module folder to an appropriatly named ZIP file.
