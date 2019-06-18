@@ -1,6 +1,6 @@
 # UV Auto Ratio
-![UI](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/blob/master/docs/rtt_examplecar_small.jpg "UVAudioRatio")
 ###### Plugin for Autodesk Maya for unifying texture area usage.
+![UI](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/blob/master/docs/rtt_examplecar_small.jpg "UVAudioRatio")
 
 ## Introduction
 
