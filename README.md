@@ -36,7 +36,7 @@ Enter UVAutoRatio Pro: the complete tool for automating all texel ratio tasks.
 
 ## Open Source
 
-After selling this software for many years, we decided to open source it so that development could continue without us.
+After selling this software for many years, we decided to stop developing it, so we released it as an open source project.
 
 + Written in C++
 + Maya scripts written in MEL
