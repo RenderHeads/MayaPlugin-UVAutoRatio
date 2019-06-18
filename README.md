@@ -38,8 +38,8 @@ Enter UVAutoRatio Pro: the complete tool for automating all texel ratio tasks.
 
 After selling this product for many years, we decided to open source it so that development could continue without us.
 
-+ Written in C++.
-+ Maya scripts written in MEL.
++ Written in C++
++ Maya scripts written in MEL
 + Builds for Windows, macOS and Linux
 
 If you are prompted for a license key, you can use the following:
