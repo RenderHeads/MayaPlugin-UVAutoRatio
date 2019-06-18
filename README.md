@@ -1,5 +1,5 @@
 # UV Auto Ratio
-#### Plugin for Autodesk Maya for unifying texture area usage.
+###### Plugin for Autodesk Maya for unifying texture area usage.
 Created by RenderHeads Ltd in 2007, source released in 2015.
 
 ![UI](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/blob/master/docs/rtt_examplecar_small.jpg "UVAudioRatio")
@@ -30,13 +30,13 @@ Enter UVAutoRatio Pro: the complete tool for automating all texel ratio tasks.
 
 ## Links
 
-+ [PDF Docs](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/releases/download/2015-2.5.x/UVAutoRatio2.0ProDocumentation.pdf)
-+ [Tutorial Video](https://vimeo.com/856301)
++ [PDF docs](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/releases/download/2015-2.5.x/UVAutoRatio2.0ProDocumentation.pdf)
++ [Tutorial video](https://vimeo.com/856301)
 + [Cached website 2011](https://web.archive.org/web/20111205111334/http://www.renderheads.com/portfolio/UVAutoRatio/)
 
 ## Open Source
 
-After selling this product for many years, we decided to open source it so that development could continue without us.
+After selling this software for many years, we decided to open source it so that development could continue without us.
 
 + Written in C++
 + Maya scripts written in MEL
