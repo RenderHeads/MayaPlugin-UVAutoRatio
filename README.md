@@ -6,6 +6,8 @@ Created by RenderHeads Ltd in 2007, source released in 2015.
 
 ## Introduction
 
+UVAutoRatio was a Maya plugin developed by RenderHeads Ltd between 2007-2013 and open-sourced in 2015.  The software is no longer supported or developed by RenderHeads Ltd and this serves as a historic archive.
+
 Artists in the film and games industry spend hours manually scaling the texture coordinates of models to get them in the right proportion. This plugin completely automates this process but still leaves the artist in control.
 
 To get the most out of textures they should be mapped in proportion to the size of the geometry. Not doing so means that different parts of the scene will have different texture distribution, resulting in some textures appearing blurrier than others while some will be overly sharp, making the scene appear inconsistent and strange. Those objects with too much texture mapped to them waste memory and cause aliasing (flickering) due to the overly high frequency of texels.
