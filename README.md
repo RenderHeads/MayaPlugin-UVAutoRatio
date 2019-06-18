@@ -1,14 +1,45 @@
 # UV Auto Ratio
-######Plugin for Autodesk Maya for unifying texture area usage.
+#### Plugin for Autodesk Maya for unifying texture area usage.
 Created by RenderHeads Ltd in 2007, source released in 2015.
-Plugin website: http://renderheads.com/portfolio/UVAutoRatio/
 
-##General
+[Tutorial Video](https://vimeo.com/856301)
+[Original website] (http://renderheads.com/portfolio/UVAutoRatio/)
+[Cached website] (http://renderheads.com/portfolio/UVAutoRatio/)
 
-Written in C++.
-Maya scripts written in MEL.
+## Introduction
 
-##Maya SDK Setup
+Artists in the film and games industry spend hours manually scaling the texture coordinates of models to get them in the right proportion. This plugin completely automates this process but still leaves the artist in control.
+
+To get the most out of textures they should be mapped in proportion to the size of the geometry. Not doing so means that different parts of the scene will have different texture distribution, resulting in some textures appearing blurrier than others while some will be overly sharp, making the scene appear inconsistent and strange. Those objects with too much texture mapped to them waste memory and cause aliasing (flickering) due to the overly high frequency of texels.
+
+Artists in the game and film industry can spend hours scaling UVs up and down manually trying to get them to the ideal proportion. This isn’t a particularly fun job, in fact it’s not something we should be wasting our time with. Wouldn’t it be great if this tiresome task was automated?
+
+Enter UVAutoRatio Pro: the complete tool for automating all texel ratio tasks.
+
+## Features
+
+..* Automatically scale UVs based on surface area
+..* Fast and accurate processing algorithm
+..* Ability to specify UV-set
+..* Operates on UV shells
+..* Automatically moves overlapping UV shells
+..* Normalise across multiple objects
+..* UV shell finder tool
+..* Ratio inspector tool
+..* Maintains settings between sessions
+
+## Open Source
+
+After selling this product for many years, we decided to open source it so that development could continue without us.
+
+..* Written in C++.
+..* Maya scripts written in MEL.
+
+If you are prompted for a license key, you can use the following:
+
+`contact@renderheads.com-(0 user license)-RenderHeads-RenderHeads-UVAutoRatio 2.0 Pro-5A5W-2K55-6J2Z-343C-5A5W-2K55-4R2Z-343C-2K4N-0E1M-3G3C-1N4H`
+
+## Maya SDK Setup
 
 The core Maya SDK must be available to the plugin in order to compile.  The 3 folders needed are:
  + include
@@ -52,7 +83,7 @@ For example:
 
 In Windows set the environment variable MAYALIBBASE to the path of your MayaSDK folder.  After adding the environment variable you may need to reopen Visual Studio.
 
-##Compiling for Windows
+## Compiling for Windows
 
 + The project solution is created with Visual Studio 2008.
 + Make sure you have set up your Maya SDK files as specified above
@@ -79,11 +110,11 @@ To add a new configuration for another version of Maya:
 			For Maya 2011 32-bit it would read "$(OutDir)";"$(MAYALIBBASE)\Windows\2011\lib";
 			For Maya 2011 64-bit it would read "$(OutDir)";"$(MAYALIBBASE)\Windows\2011\lib64";
 
-##Compiling for MacOSX
+## Compiling for MacOSX
 
 + Use XCode to load the project "uvAutoRatioPro.xcodeproj"
 
-##Compiling for Linux
+## Compiling for Linux
 
 + See build.sh and buildall.sh
 + Use 'make'
@@ -92,7 +123,7 @@ To add a new configuration for another version of Maya:
 	+ export MAYAVER=2011		(this is the maya version number, eg 8.5)
 	+ export MAYAVERs=2011		(this is the string version of the Maya version, so Maya 8.5 would be 85)
 
-##Packaging for Windows
+## Packaging for Windows
 
 + We build to a setup executable
 + Install NSIS v2.46 with the FindProcDLL plugin (http://nsis.sourceforge.net/FindProcDLL_plug-in)
@@ -102,6 +133,6 @@ To add a new configuration for another version of Maya:
 
 NOTE: If the installer fails to run, it may be because using a mapped drive
 
-##Packaging for OSX and Linux
+##P ackaging for OSX and Linux
 
 + There is no setup, simply ZIP up all the files in the module folder to an appropriatly named ZIP file.
