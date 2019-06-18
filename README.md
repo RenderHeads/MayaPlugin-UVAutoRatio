@@ -1,8 +1,6 @@
 # UV Auto Ratio
-###### Plugin for Autodesk Maya for unifying texture area usage.
-Created by RenderHeads Ltd in 2007, source released in 2015.
-
 ![UI](https://github.com/RenderHeads/MayaPlugin-UVAutoRatio/blob/master/docs/rtt_examplecar_small.jpg "UVAudioRatio")
+###### Plugin for Autodesk Maya for unifying texture area usage.
 
 ## Introduction
 
