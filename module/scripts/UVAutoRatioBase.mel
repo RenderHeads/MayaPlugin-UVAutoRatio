@@ -58,7 +58,26 @@ global proc string
 UVAR_GetMayaVersionNumber()
 {
 	string $mayaVersion = `about -version`;
-	
+	if (startsWith($mayaVersion, "2022"))
+	{
+		return "2022";
+	}
+	if (startsWith($mayaVersion, "2020"))
+	{
+		return "2020";
+	}
+	if (startsWith($mayaVersion, "2019"))
+	{
+		return "2019";
+	}	
+	if (startsWith($mayaVersion, "2018"))
+	{
+		return "2018";
+	}
+	if (startsWith($mayaVersion, "2017"))
+	{
+		return "2017";
+	}	
 	if (startsWith($mayaVersion, "2016"))
 	{
 		return "2016";
